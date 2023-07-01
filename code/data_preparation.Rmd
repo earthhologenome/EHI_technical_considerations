@@ -1,0 +1,64 @@
+---
+title: "Data preparation"
+author: "Antton Alberdi"
+date: "1/7/2023"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+The data preparation script cleans the raw datasets for smooth downstream analyses. Original CSV files were downloaded from the EHI Airtable database on the 1st of July 2023, and stored in the data directory of this repository.
+
+### Data source
+```{r batch, echo=FALSE}
+batch="2023_07_01"
+```
+
+## Load libraries
+```{r libraries, include=FALSE}
+library(tidyverse)
+```
+
+## Load data files
+
+```{r samples_prep, echo=FALSE}
+read.csv(paste0("data/original/",batch,"/samples_",batch,".csv")) %>%
+  #select relevant columns
+  select(
+    #Sample columns
+    Code,Type,Freshness,Freezing,
+    #Host specimen columns
+    Specimen.ID,Species,Development,Sex,Length..mm.,Weight..g.,
+    #Capture columns
+    Captures.ID,Sampling_events,Place,Country,Biome,Environment,Latitude.reduced,Longitude.reduced) %>%
+  #rename columns
+  rename(
+    #Sample columns
+    sample_id=Code,
+    sample_type=Type,
+    sample_freshness=Freshness,
+    sample_freezing=Freezing,
+    #Host specimen columns
+    specimen_id=Specimen.ID,
+    specimen_species=Species,
+    specimen_development=Development,
+    specimen_sex=Sex,
+    specimen_length=Length..mm.,
+    specimen_weight=Weight..g.,
+    #Capture columns
+    capture_id=Captures.ID,
+    capture_event_id=Sampling_events,
+    capture_place=Place,
+    capture_country=Country,
+    capture_biome=Biome,
+    capture_environment=Environment,
+    capture_latitude=Latitude.reduced,
+    capture_longitude=Longitude.reduced,
+  ) %>%
+  #remove negative controls
+  filter(specimen_id != "") %>%
+  #save clean table
+  write.csv("data/samples.csv")
+
+```
