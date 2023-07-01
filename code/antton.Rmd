@@ -7,6 +7,74 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+wd="/Users/anttonalberdi/github/EHI_technical_considerations/"
+library(tidyverse)
+library(maps)
+library(ggplot2)
 ```
 
-# Analyses by Antton
+## Sample map
+Overview of origin of the samples
+
+```{r sample_map}
+read.csv(paste0(wd,"/data/samples.csv")) %>%
+  #subset columns
+  select(
+    sample_id,
+    specimen_species,
+    specimen_order,
+    specimen_class,
+    capture_latitude,
+    capture_longitude
+  ) %>%
+  #Add jitter to points
+  mutate(
+    capture_latitude_jitter=capture_latitude+rnorm(length(capture_latitude), mean=0, sd=0.5),
+    capture_longitude_jitter=capture_longitude+rnorm(length(capture_longitude), mean=0, sd=0.5),
+  ) %>%
+  #Plot map  
+  ggplot(.) +
+    geom_map(
+      data=map_data("world"),
+      map = map_data("world"),
+      aes(long, lat, map_id=region),
+      color = "white", fill = "#cccccc", size = 0.2
+    ) +
+    geom_point(
+      aes(x=capture_longitude_jitter,y=capture_latitude_jitter, color=specimen_order),
+      alpha=0.5, size=0.5, shape=16) +
+    theme_minimal() +
+    theme(legend.position = "bottom")
+  ggsave(paste0(wd,"/figures/antton/sample_map.pdf"),device="pdf",width=12,height=10)
+```
+
+## Sample type overview
+```{r sample_type}
+read.csv(paste0(wd,"/data/samples.csv")) %>%
+  #subset columns
+  select(
+    sample_id,
+    sample_type,
+    specimen_species,
+    specimen_order,
+    specimen_class
+  ) %>%
+  #Simplify sample types
+  mutate(sample_type = case_when(
+    sample_type == "Colon mucosa" | sample_type == "Duodenum mucosa" | sample_type == "Jejunum contents" | sample_type == "Esophagus swab" | sample_type == "Duodenum contents" | sample_type == "Stomach contents" | sample_type == "Stomach mucosa" | sample_type == "Colon contents" | sample_type == "Jejunum mucosa" ~ "Gut content",
+    TRUE ~ sample_type
+  )) %>%
+  #Filter
+  filter(!(sample_type %in% c("Other", "Unknown",""))) %>%
+  #Aggretate data
+  group_by(sample_type, specimen_order) %>%
+  mutate(count = n()) %>%
+  ungroup() %>%
+  arrange(desc(count)) %>%
+  #Plot map  
+  ggplot(., aes(fill=specimen_order, y=reorder(sample_type, count), x=count)) +
+    geom_bar(position="stack", stat="identity") +
+    theme_classic() +
+    theme(legend.position = "bottom")
+  ggsave(paste0(wd,"/figures/antton/sample_types.pdf"),device="pdf",width=10,height=6)
+```

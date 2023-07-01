@@ -18,7 +18,8 @@ Analyses are organised and distributed in the Projects section:
 https://github.com/orgs/earthhologenome/projects/1/views/1
 
 ### Antton
-Details here.
+- Sample overview map.
+- Sample types overview barplot.
 
 ### Aoife
 Details here.
