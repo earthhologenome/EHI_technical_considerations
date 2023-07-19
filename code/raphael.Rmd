@@ -10,3 +10,18 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 # Analyses by Raphael
+
+```{r, echo=FALSE}
+#load libs:
+library(tidyverse)
+```
+
+
+```{r}
+ppr <- read_delim("../data/preprocessing.csv")
+
+```
+
+
+
+

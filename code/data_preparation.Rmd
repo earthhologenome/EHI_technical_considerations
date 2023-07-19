@@ -1,7 +1,7 @@
 ---
 title: "Data preparation"
-author: "Antton Alberdi"
-date: "1/7/2023"
+author: "Antton Alberdi/Raphael Eisenhofer"
+date: "18/7/2023"
 output: html_document
 ---
 
@@ -13,7 +13,7 @@ The data preparation script cleans the raw datasets for smooth downstream analys
 ### Data source
 ```{r batch, echo=FALSE}
 batch="2023_07_01"
-wd="/Users/anttonalberdi/github/EHI_technical_considerations/"
+wd=getwd()
 ```
 
 ## Load libraries
@@ -91,11 +91,11 @@ read.csv(paste0(wd,"/data/original/",batch,"/extraction_",batch,".csv")) %>%
 
 ### Library
 ```{r library_prep, echo=FALSE}
-read.csv(paste0(wd,"/data/original/",batch,"/library_",batch,".csv")) %>%
+read.csv(paste0(wd,"/../data/original/",batch,"/library_",batch,".csv")) %>%
   #select relevant columns
   select(
     #sample identifiers
-    LI.Code,LI.Batch,Sample,EX.Sample,
+    LI.Code,LI.Batch,Sample,EX.Sample,Sequencing.datasets,
     #library stats
     Input.volume,Input.DNA..ng.,EX.concentration..ng.ul.,Adaptor.nM,Required.PCR.cycles
   ) %>%
@@ -106,6 +106,7 @@ read.csv(paste0(wd,"/data/original/",batch,"/library_",batch,".csv")) %>%
     library_batch=LI.Batch,
     sample_id=Sample,
     extraction_id=EX.Sample,
+    sequencing_datasets=Sequencing.datasets,
     #library stats
     library_input_volume=Input.volume,
     library_input_dna=Input.DNA..ng.,
@@ -114,7 +115,7 @@ read.csv(paste0(wd,"/data/original/",batch,"/library_",batch,".csv")) %>%
     library_PCR_cycles=Required.PCR.cycles
   ) %>%
   #save clean table
-  write.csv(paste0(wd,"/data/library.csv"))
+  write.csv(paste0(wd,"/../data/library.csv"))
 ```
 
 ### Index
@@ -298,3 +299,30 @@ read.csv(paste0(wd,"/data/original/",batch,"/mags_",batch,".csv")) %>%
   #save clean table
   write.csv(paste0(wd,"/data/mags.csv"))
 ```
+
+### Merge tables
+```{r, echo=FALSE, message=FALSE}
+#Raphael
+library(tidyverse)
+library(janitor)
+
+ppr <- read_delim("../data/preprocessing.csv")
+sam <- read_delim("../data/samples.csv") %>%
+  #remove duplicate sample_id value
+  filter(specimen_id != "SD00419")
+ext <- read_delim("../data/extraction.csv")
+lib <- read_delim("../data/library.csv") %>%
+  filter(., !is.na(sequencing_datasets))
+seq <- read_delim("../data/sequence.csv") %>%
+  mutate(library_id = str_replace_all(index_id, "..$", ""))
+
+
+combined <- ppr %>%
+  inner_join(., seq, by = "sequence_id", keep = FALSE) %>%
+  inner_join(., lib, by = "library_id", keep = FALSE) %>%
+  inner_join(., ext, by = "extraction_id", keep = FALSE) %>%
+  inner_join(., sam, by = c("sample_id.x" = "sample_id")) %>%
+
+  write.csv(paste0(wd, "/../data/combined.csv"))
+```
+
