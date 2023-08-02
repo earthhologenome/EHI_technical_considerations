@@ -28,13 +28,13 @@ Cleaning tables related to field and laboratory work
 
 ### Samples
 ```{r samples_prep, echo=FALSE}
-read.csv(paste0(wd,"/data/original/",batch,"/samples_",batch,".csv")) %>%
+hi<-read.csv(paste0(wd,"/../data/original/",batch,"/samples_",batch,".csv")) %>%
   #select relevant columns
   select(
     #Sample columns
     Code,Type,Freshness,Freezing,
     #Host specimen columns
-    Specimen.ID,Species,Order,Class..from.Specimen.ID...from.Captures.ID.,Development,Sex,Length..mm.,Weight..g.,
+    Specimen.ID,Species,Order,Family,Class..from.Specimen.ID...from.Captures.ID.,Development,Sex,Length..mm.,Weight..g.,
     #Capture columns
     Captures.ID,Sampling_events,Place,Country,Biome,Environment,Latitude.reduced,Longitude.reduced) %>%
   #rename columns
@@ -48,6 +48,7 @@ read.csv(paste0(wd,"/data/original/",batch,"/samples_",batch,".csv")) %>%
     specimen_id=Specimen.ID,
     specimen_species=Species,
     specimen_order=Order,
+    specimen_family=Family,
     specimen_class=Class..from.Specimen.ID...from.Captures.ID.,
     specimen_development=Development,
     specimen_sex=Sex,
@@ -66,12 +67,12 @@ read.csv(paste0(wd,"/data/original/",batch,"/samples_",batch,".csv")) %>%
   #remove negative controls
   filter(specimen_id != "") %>%
   #save clean table
-  write.csv(paste0(wd,"/data/samples.csv"))
+  write.csv(paste0(wd,"/../data/samples.csv"), row.names = FALSE)
 ```
 
 ### Extraction
 ```{r extraction_prep, echo=FALSE}
-read.csv(paste0(wd,"/data/original/",batch,"/extraction_",batch,".csv")) %>%
+read.csv(paste0(wd,"/../data/original/",batch,"/extraction_",batch,".csv")) %>%
   #select relevant columns
   select(
     Ex.code,EX.batch,EX.ng.ul,EX.ul,EX.DNA.ng,BB.sample
@@ -86,7 +87,7 @@ read.csv(paste0(wd,"/data/original/",batch,"/extraction_",batch,".csv")) %>%
     sample_id=BB.sample,
   ) %>%
   #save clean table
-  write.csv(paste0(wd,"/data/extraction.csv"))
+  write.csv(paste0(wd,"/../data/extraction.csv"), row.names = FALSE)
 ```
 
 ### Library
@@ -115,12 +116,12 @@ read.csv(paste0(wd,"/../data/original/",batch,"/library_",batch,".csv")) %>%
     library_PCR_cycles=Required.PCR.cycles
   ) %>%
   #save clean table
-  write.csv(paste0(wd,"/../data/library.csv"))
+  write.csv(paste0(wd,"/../data/library.csv"), row.names = FALSE)
 ```
 
 ### Index
 ```{r index_prep, echo=FALSE}
-read.csv(paste0(wd,"/data/original/",batch,"/index_",batch,".csv")) %>%
+read.csv(paste0(wd,"/../data/original/",batch,"/index_",batch,".csv")) %>%
   #select relevant columns
   select(
     #sample identifiers
@@ -148,12 +149,12 @@ read.csv(paste0(wd,"/data/original/",batch,"/index_",batch,".csv")) %>%
     index_library_moles=DNA.mols
   ) %>%
   #save clean table
-  write.csv(paste0(wd,"/data/index.csv"))
+  write.csv(paste0(wd,"/../data/index.csv"), row.names = FALSE)
 ```
 
 ### Sequence
 ```{r sequence_prep, echo=FALSE}
-read.csv(paste0(wd,"/data/original/",batch,"/sequence_",batch,".csv")) %>%
+read.csv(paste0(wd,"/../data/original/",batch,"/sequence_",batch,".csv")) %>%
   #select relevant columns
   select(
     #sample identifiers
@@ -183,7 +184,7 @@ read.csv(paste0(wd,"/data/original/",batch,"/sequence_",batch,".csv")) %>%
     sequence_gc=GC.
   ) %>%
   #save clean table
-  write.csv(paste0(wd,"/data/sequence.csv"))
+  write.csv(paste0(wd,"/../data/sequence.csv"), row.names = FALSE)
 ```
 
 ## Bioinformatics
@@ -191,7 +192,7 @@ Cleaning tables related to bioinformatic processing of the data.
 
 ### Preprocessing
 ```{r preprocessing_prep, echo=FALSE}
-read.csv(paste0(wd,"/data/original/",batch,"/preprocessing_",batch,".csv")) %>%
+read.csv(paste0(wd,"/../data/original/",batch,"/preprocessing_",batch,".csv")) %>%
   #select relevant columns
   select(
     #data identifiers
@@ -219,12 +220,12 @@ read.csv(paste0(wd,"/data/original/",batch,"/preprocessing_",batch,".csv")) %>%
     nonpareil_coverage=C
   ) %>%
   #save clean table
-  write.csv(paste0(wd,"/data/preprocessing.csv"))
+  write.csv(paste0(wd,"/../data/preprocessing.csv"), row.names = FALSE)
 ```
 
 ### Assembly
 ```{r assembly_prep, echo=FALSE}
-read.csv(paste0(wd,"/data/original/",batch,"/assembly_",batch,".csv")) %>%
+read.csv(paste0(wd,"/../data/original/",batch,"/assembly_",batch,".csv")) %>%
   #select relevant columns
   select(
     #data identifiers
@@ -253,12 +254,12 @@ read.csv(paste0(wd,"/data/original/",batch,"/assembly_",batch,".csv")) %>%
     assembly_num_bins=num_bins
   ) %>%
   #save clean table
-  write.csv(paste0(wd,"/data/assembly.csv"))
+  write.csv(paste0(wd,"/../data/assembly.csv"), row.names = FALSE)
 ```
 
 ### MAGs
 ```{r mags_prep, echo=FALSE}
-read.csv(paste0(wd,"/data/original/",batch,"/mags_",batch,".csv")) %>%
+read.csv(paste0(wd,"/../data/original/",batch,"/mags_",batch,".csv")) %>%
   #select relevant columns
   select(
     #data identifiers
@@ -297,7 +298,7 @@ read.csv(paste0(wd,"/data/original/",batch,"/mags_",batch,".csv")) %>%
     mag_contigs=contigs
   ) %>%
   #save clean table
-  write.csv(paste0(wd,"/data/mags.csv"))
+  write.csv(paste0(wd,"/../data/mags.csv"), row.names = FALSE)
 ```
 
 ### Merge tables
@@ -310,19 +311,32 @@ ppr <- read_delim("../data/preprocessing.csv")
 sam <- read_delim("../data/samples.csv") %>%
   #remove duplicate sample_id value
   filter(specimen_id != "SD00419")
-ext <- read_delim("../data/extraction.csv")
+ext <- read_delim("../data/extraction.csv") %>%
+  select(!sample_id)
 lib <- read_delim("../data/library.csv") %>%
   filter(., !is.na(sequencing_datasets))
 seq <- read_delim("../data/sequence.csv") %>%
-  mutate(library_id = str_replace_all(index_id, "..$", ""))
-
+  mutate(library_id = str_replace_all(index_id, "..$", "")) %>%
+  select(!index_id)
+dups <- read_delim("../data/host_duplicates.tsv", col_names = c("ehi", "host_dup_percent"))
 
 combined <- ppr %>%
   inner_join(., seq, by = "sequence_id", keep = FALSE) %>%
   inner_join(., lib, by = "library_id", keep = FALSE) %>%
   inner_join(., ext, by = "extraction_id", keep = FALSE) %>%
-  inner_join(., sam, by = c("sample_id.x" = "sample_id")) %>%
+  inner_join(., sam, by = "sample_id") %>%
+  inner_join(., dups, by = c("sequence_id" = "ehi")) %>%
+  # Create categories based on host taxonomy
+  mutate(singlem_fraction = as.numeric(str_replace(singlem_fraction, "%", ""))/100,
+         host_percent = host_bases / bases_post_fastp,
+         tax_group = case_when(
+    str_detect(specimen_order, "Rodentia") ~ "Rodents",
+    str_detect(specimen_order, "Chiroptera") ~ "Bats",
+    str_detect(specimen_order, "Squamata") ~ "Reptiles",
+    str_detect(specimen_class, "Aves") ~ "Birds",
+    str_detect(specimen_order, "Urodela") ~ "Amphibians"
+  )) %>%
 
-  write.csv(paste0(wd, "/../data/combined.csv"))
+  write_delim(paste0(wd, "/../data/combined.tsv"))
 ```
 
