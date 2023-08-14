@@ -1,4 +1,4 @@
-"library_id","library_batch","sample_id","extraction_id","sequencing_datasets","library_input_volume","library_input_dna","library_input_dna_concentration","library_adaptor_molarity","library_PCR_cycles"
+"library_id","library_batch","sample_id","extraction_id","sequencing_datasets","library_input_volume","library_input_dna","library_input_dna_concentration","library_adaptor_molarity","library_PCR_cycles_required"
 "AAD12E1L1","LIB0001","AAD12","AAD12E1","EHI00050",24,2.8,0.12,10,14
 "AAC83E2L1","LIB0001","AAC83","AAC83E2","EHI00051",24,9.6,0.4,10,14
 "AD81E1L1","LIB0001","AD81","AD81E1","",24,12,0.5,10,14

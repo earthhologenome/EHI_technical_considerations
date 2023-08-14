@@ -1,4 +1,4 @@
-"index_id","index_batch","library_id","extraction_id","sample_id","library_input_dna","library_PCR_cycles","index_adaptors_molarity","index_library_molarity","index_volume","index_library_moles"
+"index_id","index_batch","library_id","extraction_id","sample_id","library_input_dna","library_PCR_cycles_given","index_adaptors_molarity","index_library_molarity","index_volume","index_library_moles"
 "AAX73E1L1I1","INB0002","AAX73E1L1","AAX73E1","AAX73",31,10,0.78,1.74,32,56
 "AAH18E1L1I1","INB0002","AAH18E1L1","AAH18E1","AAH18",7.7,16,2.39,6.04,32,193
 "AAX81E1L1I1","INB0002","AAX81E1L1","AAX81E1","AAX81",0,19,2.19,5.75,32,184

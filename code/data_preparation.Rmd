@@ -28,7 +28,7 @@ Cleaning tables related to field and laboratory work
 
 ### Samples
 ```{r samples_prep, echo=FALSE}
-hi<-read.csv(paste0(wd,"/../data/original/",batch,"/samples_",batch,".csv")) %>%
+read.csv(paste0(wd,"/../data/original/",batch,"/samples_",batch,".csv")) %>%
   #select relevant columns
   select(
     #Sample columns
@@ -113,7 +113,7 @@ read.csv(paste0(wd,"/../data/original/",batch,"/library_",batch,".csv")) %>%
     library_input_dna=Input.DNA..ng.,
     library_input_dna_concentration=EX.concentration..ng.ul.,
     library_adaptor_molarity=Adaptor.nM,
-    library_PCR_cycles=Required.PCR.cycles
+    library_PCR_cycles_required=Required.PCR.cycles
   ) %>%
   #save clean table
   write.csv(paste0(wd,"/../data/library.csv"), row.names = FALSE)
@@ -141,7 +141,7 @@ read.csv(paste0(wd,"/../data/original/",batch,"/index_",batch,".csv")) %>%
     sample_id=sample,
     #library stats
     library_input_dna=Initial.DNA.for.library,
-    library_PCR_cycles=Number.of.PCR.cycles,
+    library_PCR_cycles_given=Number.of.PCR.cycles,
     #indexing stats
     index_adaptors_molarity=Adaptors..nM.,
     index_library_molarity=Library..nM.,
@@ -339,4 +339,3 @@ combined <- ppr %>%
 
   write_delim(paste0(wd, "/../data/combined.tsv"))
 ```
-
