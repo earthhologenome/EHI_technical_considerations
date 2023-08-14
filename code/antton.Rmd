@@ -86,12 +86,11 @@ read.csv(paste0(wd,"/data/combined.csv")) %>%
   #subset columns
   select(
     sample_id,
-    sample_type,
-    specimen_species,
-    specimen_order,
-    specimen_class
+    tax_group,
+    library_PCR_cycles_required,
   ) %>%
-  #Simplify sample types
+
+    #Simplify sample types
   mutate(sample_type = case_when(
     sample_type == "Colon mucosa" | sample_type == "Duodenum mucosa" | sample_type == "Jejunum contents" | sample_type == "Esophagus swab" | sample_type == "Duodenum contents" | sample_type == "Stomach contents" | sample_type == "Stomach mucosa" | sample_type == "Colon contents" | sample_type == "Jejunum mucosa" ~ "Gut content",
     TRUE ~ sample_type

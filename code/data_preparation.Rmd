@@ -336,6 +336,7 @@ combined <- ppr %>%
     str_detect(specimen_class, "Aves") ~ "Birds",
     str_detect(specimen_order, "Urodela") ~ "Amphibians"
   )) %>%
-
+  # Filter only faecal and anal/cloacal swabs
+  filter(sample_type == "Faecal" | sample_type == "Anal/cloacal swab") %>%
   write.csv(paste0(wd, "/../data/combined.csv"))
 ```
