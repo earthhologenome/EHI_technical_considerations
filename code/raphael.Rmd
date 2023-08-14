@@ -2,7 +2,7 @@
 title: "Data preparation"
 author: "Raphael Eisenhofer"
 date: "1/7/2023"
-output: html_document
+output: github_document
 ---
 
 ```{r setup, include=FALSE}
@@ -10,3 +10,116 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 # Analyses by Raphael
+
+```{r, echo=FALSE}
+#load libs:
+library(tidyverse)
+```
+
+### Number of sample types/distribution of host taxonomy
+```{r, echo=FALSE, warning=FALSE}
+df <- read_delim("../data/combined.tsv")
+
+# Sample types per tax_group
+df %>%
+  group_by(sample_type, tax_group) %>%
+  summarise(n = n()) %>%
+  ggplot(aes(x = sample_type, y = n, fill = tax_group)) +
+  geom_col() +
+  theme_classic()
+
+# Keep only faecal/cloacal
+df_faec_cloa <- df %>%
+  filter(sample_type != "Tissue" & sample_type != "Skin swab" & sample_type != "Oral swab") %>%
+  filter(singlem_fraction < 1) %>%
+  filter(singlem_fraction != 0 | singlem_fraction != 0.00)
+
+# Faecal vs cloacal singlem
+df_faec_cloa %>%
+  ggplot(aes(x = sample_type, y = singlem_fraction, colour = tax_group)) +
+  geom_jitter(height = 0, width = 0.3, alpha = 0.6)
+
+# Time to freezing
+df_faec_cloa %>%
+  ggplot(aes(x = sample_freezing, y = singlem_fraction, colour = tax_group)) +
+  geom_jitter(height = 0, width = 0.3, alpha = 0.6)
+
+# Freshness
+df_faec_cloa %>%
+  ggplot(aes(x = sample_freshness, y = singlem_fraction, colour = tax_group)) +
+  geom_jitter(height = 0, width = 0.3, alpha = 0.6)
+
+
+## Other stuff
+# Extraction DNA concentration
+df_faec_cloa %>%
+  ggplot(aes(x = extraction_concentration, y = singlem_fraction, colour = tax_group)) +
+  geom_jitter(height = 0, width = 0, alpha = 0.6)
+
+# Lib input DNA
+df_faec_cloa %>%
+  ggplot(aes(x = library_input_dna, y = singlem_fraction, colour = tax_group)) +
+  geom_jitter(height = 0, width = 0, alpha = 0.6)
+
+# Host reads
+df_faec_cloa %>%
+  ggplot(aes(x = host_reads, y = singlem_fraction, colour = tax_group)) +
+  geom_jitter(height = 0, width = 0, alpha = 0.6)
+
+# Host dup%
+df_faec_cloa %>%
+  ggplot(aes(x = host_dup_percent, y = singlem_fraction, colour = tax_group)) +
+  geom_jitter(height = 0, width = 0, alpha = 0.6)
+
+
+
+
+
+
+## Sample types
+# Lib input DNA by sample_type
+df_faec_cloa %>%
+  ggplot(aes(x = sample_type, y = library_input_dna, colour = tax_group)) +
+  geom_jitter(height = 0, width = 0.3, alpha = 0.6)
+
+df_faec_cloa %>%
+  ggplot(aes(x = sample_type, y = extraction_concentration, colour = tax_group)) +
+  geom_jitter(height = 0, width = 0.3, alpha = 0.6)
+
+```
+
+# Looking at poor samples in detail
+```{r, echo=FALSE, warning=FALSE}
+df <- read_delim("../data/combined.tsv")
+
+df_meta <- df %>%
+  filter(sample_type != "Tissue" & sample_type != "Skin swab" & sample_type != "Oral swab") 
+
+#How many don't have singlem == 0 (i.e., didn't run)
+df_meta_poor <- df_meta %>% 
+  filter(singlem_fraction == 0.00)
+
+#50 faecal, 150 clocal swabs
+df_meta_poor %>%
+  ggplot(aes(x = sample_type, y = host_percent, colour = tax_group)) +
+  geom_jitter(width = 0.3, height = 0, alpha = 0.3) + 
+  facet_wrap(~tax_group)
+
+df_meta_poor %>%
+  ggplot(aes(x = extraction_concentration, y = host_percent, colour = tax_group)) +
+  geom_point(alpha = 0.3)
+
+df_meta_poor %>%
+  ggplot(aes(x = library_input_dna, y = host_percent, colour = tax_group)) +
+  geom_point(alpha = 0.3)
+
+df_meta_poor %>%
+  ggplot(aes(x = host_dup_percent, y = host_percent, colour = tax_group)) +
+  geom_point(alpha = 0.3)
+
+```
+
+
+
+
+
