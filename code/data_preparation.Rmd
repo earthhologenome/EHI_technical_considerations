@@ -337,5 +337,5 @@ combined <- ppr %>%
     str_detect(specimen_order, "Urodela") ~ "Amphibians"
   )) %>%
 
-  write_delim(paste0(wd, "/../data/combined.tsv"))
+  write.csv(paste0(wd, "/../data/combined.csv"))
 ```

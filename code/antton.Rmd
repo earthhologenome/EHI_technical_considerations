@@ -79,3 +79,35 @@ read.csv(paste0(wd,"/data/samples.csv")) %>%
     theme(legend.position = "bottom")
   ggsave(paste0(wd,"/figures/antton/sample_types.pdf"),device="pdf",width=10,height=6)
 ```
+
+## Input DNA vs. required PCR cycles
+```{r inputdna_vs_pcr}
+read.csv(paste0(wd,"/data/combined.csv")) %>%
+  #subset columns
+  select(
+    sample_id,
+    sample_type,
+    specimen_species,
+    specimen_order,
+    specimen_class
+  ) %>%
+  #Simplify sample types
+  mutate(sample_type = case_when(
+    sample_type == "Colon mucosa" | sample_type == "Duodenum mucosa" | sample_type == "Jejunum contents" | sample_type == "Esophagus swab" | sample_type == "Duodenum contents" | sample_type == "Stomach contents" | sample_type == "Stomach mucosa" | sample_type == "Colon contents" | sample_type == "Jejunum mucosa" ~ "Gut content",
+    TRUE ~ sample_type
+  )) %>%
+  #Filter
+  filter(!(sample_type %in% c("Other", "Unknown",""))) %>%
+  #Aggretate data
+  group_by(sample_type, specimen_order) %>%
+  summarize(count = n()) %>%
+  ungroup() %>%
+  #Sort types
+  mutate(sample_type = factor(sample_type, levels=rev(c("Faecal","Tissue","Anal/cloacal swab","Oral swab","Gut content","Blood","Skin swab","Pouch")))) %>%
+  #Plot map  
+  ggplot(., aes(fill=specimen_order, y=sample_type, x=count)) +
+    geom_bar(position="stack", stat="identity") +
+    theme_classic() +
+    theme(legend.position = "bottom")
+  ggsave(paste0(wd,"/figures/antton/sample_types.pdf"),device="pdf",width=10,height=6)
+```
