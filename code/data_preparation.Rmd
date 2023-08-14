@@ -198,7 +198,7 @@ read.csv(paste0(wd,"/../data/original/",batch,"/preprocessing_",batch,".csv")) %
     #data identifiers
     Code,PR_Batch,EHI_number,IN.Code..from.EHI_number.,
     #host genome info
-    Reference.genome.species,Reference.genome.closeness,
+    Reference.genome,Reference.genome.species,Reference.genome.closeness,
     #quality-filtering stats
     reads_pre_fastp,reads_post_fastp,bases_pre_fastp,bases_post_fastp,adapter_trimmed_reads,adapter_trimmed_bases,host_reads,metagenomic_bases,host_bases,
     #prokarotic fraction estimation
@@ -214,7 +214,7 @@ read.csv(paste0(wd,"/../data/original/",batch,"/preprocessing_",batch,".csv")) %
     sequence_id=EHI_number,
     index_id=IN.Code..from.EHI_number.,
     #host genome info
-    reference_species=Reference.genome.species,
+    reference_id=Reference.genome,
     reference_closenees=Reference.genome.closeness,
     #metagenomic complexity estimation
     nonpareil_coverage=C
@@ -301,6 +301,32 @@ read.csv(paste0(wd,"/../data/original/",batch,"/mags_",batch,".csv")) %>%
   write.csv(paste0(wd,"/../data/mags.csv"), row.names = FALSE)
 ```
 
+### Reference genomes
+```{r mags_prep, echo=FALSE}
+read.csv(paste0(wd,"/../data/original/",batch,"/genomes_",batch,".csv")) %>%
+  #select relevant columns
+  select(
+    #data identifiers
+    Code,Accession,
+    #genome stats
+    Quality,Size..MB.,
+    #host
+    Species
+  ) %>%
+  #rename columns
+  rename(
+    #data identifiers
+    reference_id=Code,
+    reference_accession=Accession,
+    reference_species=Species,
+    #genome stats
+    reference_quality=Quality,
+    reference_size=Size..MB.
+  ) %>%
+  #save clean table
+  write.csv(paste0(wd,"/../data/genomes.csv"), row.names = FALSE)
+```
+
 ### Merge tables
 ```{r, echo=FALSE, message=FALSE}
 #Raphael
@@ -315,12 +341,14 @@ ext <- read_delim("../data/extraction.csv") %>%
   select(!sample_id)
 lib <- read_delim("../data/library.csv") %>%
   filter(., !is.na(sequencing_datasets))
+ref <- read_delim("../data/genomes.csv")
 seq <- read_delim("../data/sequence.csv") %>%
   mutate(library_id = str_replace_all(index_id, "..$", "")) %>%
   select(!index_id)
 dups <- read_delim("../data/host_duplicates.tsv", col_names = c("ehi", "host_dup_percent"))
 
 combined <- ppr %>%
+  inner_join(., ref, by = "reference_id", keep = FALSE) %>%
   inner_join(., seq, by = "sequence_id", keep = FALSE) %>%
   inner_join(., lib, by = "library_id", keep = FALSE) %>%
   inner_join(., ext, by = "extraction_id", keep = FALSE) %>%
