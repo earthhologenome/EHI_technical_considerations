@@ -124,3 +124,107 @@ read.csv(paste0(wd,"/data/combined.csv")) %>%
   ggsave(paste0(wd,"/figures/antton/inputdna_vs_pcr_tax_group.pdf"),device="pdf",width=6,height=4)
   ggsave(paste0(wd,"/figures/antton/inputdna_vs_pcr_tax_group.png"),device="png",width=6,height=4)
 ```
+
+## Required PCR cycles vs. quality-filtered reads
+```{r pcr_vs_lowqual_sample_type}
+read.csv(paste0(wd,"/data/combined.csv")) %>%
+  #subset columns
+  select(
+    sample_id,
+    library_PCR_cycles_required,
+    reads_pre_fastp,
+    reads_post_fastp,
+    bases_pre_fastp,
+    bases_post_fastp,
+    tax_group,
+    sample_type,
+  ) %>%
+  mutate(lowqual_perc_reads=(1-reads_post_fastp/reads_pre_fastp)*100) %>%
+  mutate(lowqual_perc_bases=(1-bases_post_fastp/bases_pre_fastp)*100) %>%
+  #Plot map  EE6677 < bats
+  ggplot(., aes(y=lowqual_perc_bases, x=library_PCR_cycles_required, colour=sample_type, fill=sample_type, group=sample_type)) +
+    geom_point(alpha=0.3) +
+    stat_smooth(method = "lm", formula = y ~ x, geom = "smooth", alpha=0.2) +
+    scale_color_manual(values = c("#bdca50", "#AA3377")) +   
+    scale_fill_manual(values = c("#bdca50", "#AA3377")) +
+    scale_x_log10() +   
+    theme_classic() +
+    theme(legend.position = "bottom")
+  ggsave(paste0(wd,"/figures/antton/pcr_vs_lowqual_sample_type.pdf"),device="pdf",width=6,height=4)
+  ggsave(paste0(wd,"/figures/antton/pcr_vs_lowqual_sample_type.png"),device="png",width=6,height=4)
+```
+
+```{r pcr_vs_lowqual_tax_group}
+read.csv(paste0(wd,"/data/combined.csv")) %>%
+  #subset columns
+  select(
+    sample_id,
+    library_PCR_cycles_required,
+    reads_pre_fastp,
+    reads_post_fastp,
+    bases_pre_fastp,
+    bases_post_fastp,
+    tax_group,
+    sample_type,
+  ) %>%
+  mutate(lowqual_perc_reads=(1-reads_post_fastp/reads_pre_fastp)*100) %>%
+  mutate(lowqual_perc_bases=(1-bases_post_fastp/bases_pre_fastp)*100) %>%
+  #Plot map  EE6677 < bats
+  ggplot(., aes(y=lowqual_perc_bases, x=library_PCR_cycles_required, colour=tax_group, fill=tax_group, group=tax_group)) +
+    geom_point(alpha=0.3) +
+    stat_smooth(method = "lm", formula = y ~ x, geom = "smooth", alpha=0.2) +
+    scale_color_manual(values = c("#228833","#66CCEE","#CCBB44","#EE6677","#4477AA")) +
+    scale_fill_manual(values = c("#228833","#66CCEE","#CCBB44","#EE6677","#4477AA")) +
+    scale_x_log10() +   
+    theme_classic() +
+    theme(legend.position = "bottom")
+  ggsave(paste0(wd,"/figures/antton/pcr_vs_lowqual_tax_group.pdf"),device="pdf",width=6,height=4)
+  ggsave(paste0(wd,"/figures/antton/pcr_vs_lowqual_tax_group.png"),device="png",width=6,height=4)
+```
+
+## Required PCR cycles vs. quality-filtered reads
+```{r pcr_vs_duplicates_sample_type}
+read.csv(paste0(wd,"/data/combined.csv")) %>%
+  #subset columns
+  select(
+    sample_id,
+    library_PCR_cycles_required,
+    host_dup_percent,
+    tax_group,
+    sample_type,
+  ) %>%
+  #Plot map  EE6677 < bats
+  ggplot(., aes(y=host_dup_percent, x=library_PCR_cycles_required, colour=sample_type, fill=sample_type, group=sample_type)) +
+    geom_point(alpha=0.3) +
+    stat_smooth(method = "lm", formula = y ~ x, geom = "smooth", alpha=0.2) +
+    scale_color_manual(values = c("#bdca50", "#AA3377")) +   
+    scale_fill_manual(values = c("#bdca50", "#AA3377")) +
+    scale_x_log10() +   
+    theme_classic() +
+    theme(legend.position = "bottom")
+  ggsave(paste0(wd,"/figures/antton/pcr_vs_duplicates_sample_type.pdf"),device="pdf",width=6,height=4)
+  ggsave(paste0(wd,"/figures/antton/pcr_vs_duplicates_sample_type.png"),device="png",width=6,height=4)
+```
+
+```{r pcr_vs_lduplicates_tax_group}
+read.csv(paste0(wd,"/data/combined.csv")) %>%
+  #subset columns
+  select(
+    sample_id,
+    library_PCR_cycles_required,
+    host_dup_percent,
+    tax_group,
+    sample_type,
+  ) %>%
+  #Plot map  EE6677 < bats
+  ggplot(., aes(y=host_dup_percent, x=library_PCR_cycles_required, colour=tax_group, fill=tax_group, group=tax_group)) +
+    geom_point(alpha=0.3) +
+    stat_smooth(method = "lm", formula = y ~ x, geom = "smooth", alpha=0.2) +
+    scale_color_manual(values = c("#228833","#66CCEE","#CCBB44","#EE6677","#4477AA")) +
+    scale_fill_manual(values = c("#228833","#66CCEE","#CCBB44","#EE6677","#4477AA")) +
+    scale_x_log10() +   
+    theme_classic() +
+    theme(legend.position = "bottom")
+  ggsave(paste0(wd,"/figures/antton/pcr_vs_duplicates_tax_group.pdf"),device="pdf",width=6,height=4)
+  ggsave(paste0(wd,"/figures/antton/pcr_vs_duplicates_tax_group.png"),device="png",width=6,height=4)
+```
