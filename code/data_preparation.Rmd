@@ -357,6 +357,8 @@ combined <- ppr %>%
   # Create categories based on host taxonomy
   mutate(singlem_fraction = as.numeric(str_replace(singlem_fraction, "%", ""))/100,
          host_percent = host_bases / bases_post_fastp,
+         bp_survived_fastp = bases_post_fastp / bases_pre_fastp,
+         reads_survived_fastp = reads_post_fastp / reads_pre_fastp,
          tax_group = case_when(
     str_detect(specimen_order, "Rodentia") ~ "Rodents",
     str_detect(specimen_order, "Chiroptera") ~ "Bats",
@@ -364,7 +366,5 @@ combined <- ppr %>%
     str_detect(specimen_class, "Aves") ~ "Birds",
     str_detect(specimen_order, "Urodela") ~ "Amphibians"
   )) %>%
-  # Filter only faecal and anal/cloacal swabs
-  filter(sample_type == "Faecal" | sample_type == "Anal/cloacal swab") %>%
   write.csv(paste0(wd, "/../data/combined.csv"))
 ```
