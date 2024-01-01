@@ -80,6 +80,58 @@ read.csv(paste0(wd,"/data/samples.csv")) %>%
   ggsave(paste0(wd,"/figures/antton/sample_types.pdf"),device="pdf",width=10,height=6)
 ```
 
+## Host fraction density curve
+```{r host_fraction_density_swabs}
+read.csv(paste0(wd,"/data/combined.csv")) %>%
+  #subset columns
+  select(
+    sample_id,
+    tax_group,
+    sample_type,
+    bases_post_fastp,
+    host_bases
+  ) %>%
+  #Simplify sample types
+  mutate(host_percentage = (host_bases/bases_post_fastp)*100) %>%
+  filter(tax_group != "Amphibians") %>%
+  #filter(sample_type == "Faecal") %>%
+  filter(sample_type == "Anal/cloacal swab") %>%
+  #Plot map  
+  ggplot(., aes(x=host_percentage, color=tax_group, fill=tax_group)) +
+    ggtitle("Anal/cloacal swab")+
+    geom_density(alpha = 0.1) +
+    scale_color_manual(values = c("#66CCEE","#CCBB44","#EE6677","#4477AA")) +
+    scale_fill_manual(values = c("#66CCEE","#CCBB44","#EE6677","#4477AA")) +
+    theme_classic() +
+    theme(legend.position = "bottom")
+  ggsave(paste0(wd,"/figures/antton/host_fraction_swabs.pdf"),device="pdf",width=8,height=5)
+```
+
+```{r host_fraction_density_swabs}
+read.csv(paste0(wd,"/data/combined.csv")) %>%
+  #subset columns
+  select(
+    sample_id,
+    tax_group,
+    sample_type,
+    bases_post_fastp,
+    host_bases
+  ) %>%
+  #Simplify sample types
+  mutate(host_percentage = (host_bases/bases_post_fastp)*100) %>%
+  filter(tax_group != "Amphibians") %>%
+  filter(sample_type == "Faecal") %>%
+  #Plot map  
+  ggplot(., aes(x=host_percentage, color=tax_group, fill=tax_group)) +
+    ggtitle("Faecal")+
+    geom_density(alpha = 0.1) +
+    scale_color_manual(values = c("#66CCEE","#CCBB44","#EE6677","#4477AA")) +
+    scale_fill_manual(values = c("#66CCEE","#CCBB44","#EE6677","#4477AA")) +
+    theme_classic() +
+    theme(legend.position = "bottom")
+  ggsave(paste0(wd,"/figures/antton/host_fraction_faecal.pdf"),device="pdf",width=8,height=5)
+```
+
 ## Input DNA vs. required PCR cycles
 ```{r inputdna_vs_pcr_sampletype}
 read.csv(paste0(wd,"/data/combined.csv")) %>%
@@ -227,4 +279,90 @@ read.csv(paste0(wd,"/data/combined.csv")) %>%
     theme(legend.position = "bottom")
   ggsave(paste0(wd,"/figures/antton/pcr_vs_duplicates_tax_group.pdf"),device="pdf",width=6,height=4)
   ggsave(paste0(wd,"/figures/antton/pcr_vs_duplicates_tax_group.png"),device="png",width=6,height=4)
+```
+
+#TO BE DONE
+
+## Host fraction vs. genome size
+```{r host_fraction_genome_size}
+
+mutate_function <- function(input1, input2) {
+  if (input1 == input2) {
+    return("Species")
+  } else if (strsplit(input1, " ")[[1]][1] == strsplit(input2, " ")[[1]][1]) {
+    return("Genus")
+  } else {
+    return("Other")
+  }
+}
+
+read.csv(paste0(wd,"/data/combined.csv")) %>%
+  #subset columns
+  select(
+    sample_id,
+    tax_group,
+    sample_type,
+    bases_post_fastp,
+    host_bases,
+    host_dup_percent,
+    specimen_species,
+    reference_species,
+    reference_size
+  ) %>%
+  #Create new columns
+  mutate(host_percentage = (host_bases/bases_post_fastp)*100) %>%
+  mutate(reference_closeness = mapply(mutate_function, specimen_species, reference_species)) %>%
+  #Filter by reference closeness
+  filter(reference_closeness != "Other") %>%
+  #Aggretate data
+  group_by(specimen_species, reference_closeness, reference_size, tax_group) %>%
+  summarize(host_percentage_avg = mean(host_percentage)) %>%
+  ungroup() %>%
+  mutate(seq_effort=((reference_size/1000)/(host_percentage_avg/100))) %>% #For 10X coverage
+  #Plot map  
+  ggplot(., aes(y=specimen_species, x=seq_effort, fill=tax_group, color=tax_group)) +
+    geom_point() +
+    scale_color_manual(values = c("#66CCEE","#CCBB44","#EE6677","#4477AA")) +
+    scale_fill_manual(values = c("#66CCEE","#CCBB44","#EE6677","#4477AA")) +
+    facet_grid(tax_group ~ ., scales = "free", space = "free") +
+    xlim(c(1,20))+
+    theme_classic() +
+    theme(legend.position = "bottom", axis.text.y=element_blank())
+  ggsave(paste0(wd,"/figures/antton/host_fraction_genome_size.pdf"),device="pdf",width=8,height=5)
+
+#Considering duplicates
+read.csv(paste0(wd,"/data/combined.csv")) %>%
+    #subset columns
+    select(
+      sample_id,
+      tax_group,
+      sample_type,
+      bases_post_fastp,
+      host_bases,
+      host_dup_percent,
+      specimen_species,
+      reference_species,
+      reference_size
+    ) %>%
+    #Create new columns
+    mutate(host_percentage = (host_bases/bases_post_fastp)*100) %>%
+    mutate(reference_closeness = mapply(mutate_function, specimen_species, reference_species)) %>%
+    #Filter by reference closeness
+    filter(reference_closeness != "Other") %>%
+    #Aggretate data
+    group_by(specimen_species, reference_closeness, reference_size, tax_group) %>%
+    summarize(host_percentage_avg = mean(host_percentage), host_dup_percent_avg = mean(host_dup_percent)) %>%
+    ungroup() %>%
+    mutate(seq_effort=((reference_size/1000)/(host_percentage_avg/100)/(1-host_dup_percent_avg))) %>% #For 10X coverage
+    #Plot map  
+    ggplot(., aes(y=specimen_species, x=seq_effort, fill=tax_group, color=tax_group)) +
+      geom_point() +
+      scale_color_manual(values = c("#66CCEE","#CCBB44","#EE6677","#4477AA")) +
+      scale_fill_manual(values = c("#66CCEE","#CCBB44","#EE6677","#4477AA")) +
+      facet_grid(tax_group ~ ., scales = "free", space = "free") +
+      xlim(c(1,20))+
+      theme_classic() +
+      theme(legend.position = "bottom", axis.text.y=element_blank())
+    ggsave(paste0(wd,"/figures/antton/host_fraction_genome_size_dup.pdf"),device="pdf",width=8,height=5)
+
 ```
