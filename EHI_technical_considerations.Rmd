@@ -1,0 +1,318 @@
+---
+title: "EHI Technical Considerations"
+author: "Antton Alberdi"
+date: "2024-01-01"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r libraries}
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(maps))
+suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages(library(knitr))
+suppressPackageStartupMessages(library(nlme))
+```
+
+# 1. General statistics
+
+## Sample statistics
+
+### Number of specimens
+```{r number_of_specimens, message=F, warning=F}
+read_csv("data/samples.csv") %>%
+  select(specimen_id) %>%
+  unique() %>%
+  nrow()
+```
+
+### Number of species
+```{r number_of_species, message=F, warning=F}
+read_csv("data/samples.csv") %>%
+  select(specimen_species) %>%
+  unique() %>%
+  nrow()
+```
+
+### Number of orders
+```{r number_of_orders, message=F, warning=F}
+read_csv("data/samples.csv") %>%
+  select(specimen_order) %>%
+  unique() %>%
+  nrow()
+```
+
+### Origin of samples (Figure S1)
+
+```{r sample_map, message=F, warning=F, fig.height=8, fig.width=10, fig.fullwidth=TRUE}
+read_csv("data/samples.csv") %>%
+  #subset columns
+  select(
+    sample_id,
+    specimen_species,
+    specimen_order,
+    specimen_class,
+    capture_latitude,
+    capture_longitude
+  ) %>%
+  #Add jitter to points
+  mutate(
+    capture_latitude_jitter=capture_latitude+rnorm(length(capture_latitude), mean=0, sd=0.5),
+    capture_longitude_jitter=capture_longitude+rnorm(length(capture_longitude), mean=0, sd=0.5),
+  ) %>%
+  #Plot map  
+  ggplot(.) +
+    geom_map(
+      data=map_data("world"),
+      map = map_data("world"),
+      aes(long, lat, map_id=region),
+      color = "white", fill = "#cccccc", size = 0.2
+    ) +
+    geom_point(
+      aes(x=capture_longitude_jitter,y=capture_latitude_jitter, color=specimen_order),
+      alpha=0.5, size=0.5, shape=16) +
+    labs(color="Taxonomic order") +
+    theme_minimal() +
+    theme(
+      axis.title.x=element_blank(),
+      axis.title.y=element_blank(),
+      legend.position = "bottom")
+```
+
+## Data statistics
+
+### Total data
+
+```{r total_data, message=F, warning=F}
+read_csv("data/preprocessing.csv") %>%
+  mutate(bases_pre_fastp = bases_pre_fastp / 1000000000)  %>% #convert bases to gigabases (GB)
+  summarise(
+    total= sum(bases_pre_fastp, na.rm = TRUE),
+    mean= mean(bases_pre_fastp, na.rm = TRUE),
+    sd = sd(bases_pre_fastp, na.rm = TRUE)
+  ) %>%
+  kable()
+```
+
+### Quality-filtered data
+
+```{r quality_filtered_data, message=F, warning=F}
+read_csv("data/preprocessing.csv") %>%
+  mutate(bases_post_fastp = bases_post_fastp / 1000000000)  %>% #convert bases to gigabases (GB)
+  summarise(
+    total= sum(bases_post_fastp, na.rm = TRUE),
+    mean= mean(bases_post_fastp, na.rm = TRUE),
+    sd = sd(bases_post_fastp, na.rm = TRUE)
+  ) %>%
+  kable()
+```
+
+### Host genomic data
+
+```{r host_data, message=F, warning=F}
+read_csv("data/preprocessing.csv") %>%
+  mutate(host_bases = host_bases / 1000000000)  %>% #convert bases to gigabases (GB)
+  summarise(
+    total= sum(host_bases, na.rm = TRUE),
+    mean= mean(host_bases, na.rm = TRUE),
+    sd = sd(host_bases, na.rm = TRUE)
+  ) %>%
+  kable()
+```
+
+### Metagenomic data
+
+```{r metagenomic_data, message=F, warning=F}
+read_csv("data/preprocessing.csv") %>%
+  mutate(metagenomic_bases = metagenomic_bases / 1000000000)  %>% #convert bases to gigabases (GB)
+  summarise(
+    total= sum(metagenomic_bases, na.rm = TRUE),
+    mean= mean(metagenomic_bases, na.rm = TRUE),
+    sd = sd(metagenomic_bases, na.rm = TRUE)
+  ) %>%
+  kable()
+```
+
+### Assemblies 
+
+```{r number_of_assemblies, message=F, warning=F}
+read_csv("data/assembly.csv") %>%
+  count(assembly_type) %>%
+  kable()
+```
+
+### MAGs
+
+```{r number_of_mags, message=F, warning=F}
+read_csv("data/mags.csv") %>%
+  nrow()
+```
+
+# 2. Laboratory sample processing
+
+## 2.1 DNA extraction
+
+### General statistics
+```{r dna_extraction, message=F, warning=F}
+read_csv("data/extraction.csv") %>%
+   summarise(
+    max= max(extraction_total, na.rm = TRUE),
+    min= min(extraction_total, na.rm = TRUE),
+    mean= mean(extraction_total, na.rm = TRUE),
+    sd = sd(extraction_total, na.rm = TRUE)
+  ) %>%
+  kable()
+```
+
+### Sample types
+
+#### Data distribution
+```{r dna_extraction_sample_type_hist, message=F, warning=F, fig.height=6, fig.width=10, fig.fullwidth=TRUE}
+read_csv("data/combined.csv") %>%
+  filter(sample_type %in% c("Faecal", "Anal/cloacal swab"))  %>%
+  ggplot(., aes(x=extraction_total, fill=sample_type, color=sample_type)) + 
+    geom_density() + 
+    scale_color_manual(values = c("#bdca50", "#AA3377")) +   
+    scale_fill_manual(values = c("#bdca5050", "#AA337750")) +
+    labs(y="Density",x="DNA yield", fill="Sample type", color="Sample type") +
+    theme_classic()
+```
+
+#### Comparison
+```{r dna_extraction_sample_type_comparison, message=F, warning=F}
+read_csv("data/combined.csv") %>%
+  filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
+  mutate(extraction_total = ifelse(extraction_total == 0, 0.00001, extraction_total)) %>%
+  mutate(extraction_total = log(extraction_total)) %>% 
+  select(extraction_total,sample_type) %>%
+  mutate(sample_type = factor(sample_type)) %>%
+  wilcox.test(extraction_total ~ sample_type,data=.)
+
+read_csv("data/combined.csv") %>%
+  filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
+  group_by(sample_type)  %>%
+  summarise(
+    mean= mean(extraction_total, na.rm = TRUE),
+    sd = sd(extraction_total, na.rm = TRUE)) %>%
+  kable()
+```
+
+
+### Taxonomy
+
+#### Data distribution
+```{r dna_extraction_taxonomy_hist, message=F, warning=F, fig.height=6, fig.width=10, fig.fullwidth=TRUE}
+read_csv("data/combined.csv") %>%
+  filter(sample_type %in% c("Faecal", "Anal/cloacal swab"))  %>%
+  ggplot(., aes(x=extraction_total, fill=tax_group, color=tax_group)) + 
+    geom_density() +
+    scale_color_manual(values = c("#228833","#66CCEE","#CCBB44","#EE6677","#4477AA")) +
+    scale_fill_manual(values = c("#22883350","#66CCEE50","#CCBB4450","#EE667750","#4477AA50")) +
+    labs(y="Density",x="DNA yield", fill="Sample type", color="Sample type") +
+    theme_classic()
+```
+
+```{r dna_extraction_taxonomy_jitter, message=F, warning=F, fig.height=6, fig.width=10, fig.fullwidth=TRUE}
+read_csv("data/combined.csv") %>%
+  filter(sample_type %in% c("Faecal", "Anal/cloacal swab"))  %>%
+  ggplot(., aes(y=extraction_total,x=tax_group,color=tax_group)) + 
+    geom_jitter() +
+    scale_color_manual(values = c("#22883380","#66CCEE80","#CCBB4480","#EE667780","#4477AA80")) +
+    labs(y="DNA yield",x="Taxonomic group", color="Sample type") +
+    theme_classic()
+```
+
+#### Comparison
+```{r dna_extraction_taxonomy_comparison, message=F, warning=F}
+read_csv("data/combined.csv") %>%
+  filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
+  mutate(extraction_total = ifelse(extraction_total == 0, 0.00001, extraction_total)) %>%
+  mutate(extraction_total = log(extraction_total)) %>% 
+  select(extraction_total,tax_group) %>%
+  mutate(sample_type = factor(tax_group)) %>%
+  kruskal.test(extraction_total ~ tax_group,data=.)
+
+read_csv("data/combined.csv") %>%
+  filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
+  group_by(tax_group)  %>%
+  summarise(
+    mean= mean(extraction_total, na.rm = TRUE),
+    sd = sd(extraction_total, na.rm = TRUE)) %>%
+  kable()
+```
+
+## 2.2 Sequencing library preparation
+
+### Overall
+```{r library_preparation_stats, message=F, warning=F}
+read_csv("data/combined.csv") %>%
+  filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
+  filter(library_PCR_cycles_required > 0) %>%
+   summarise(
+    max= max(library_PCR_cycles_required, na.rm = TRUE),
+    min= min(library_PCR_cycles_required, na.rm = TRUE),
+    mean= mean(library_PCR_cycles_required, na.rm = TRUE),
+    sd = sd(library_PCR_cycles_required, na.rm = TRUE)) %>%
+  kable()
+```
+
+```{r inputdna_vs_pcr, message=F, warning=F}
+read_csv("data/combined.csv") %>%
+  filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
+  lm(library_PCR_cycles_required ~ library_input_dna, data = .)  %>%
+  summary()
+```
+
+### Sample types
+
+```{r inputdna_vs_pcr_sampletype, message=F, warning=F, fig.height=6, fig.width=10, fig.fullwidth=TRUE}
+read_csv("data/combined.csv") %>%
+  filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
+  filter(library_input_dna <= 200) %>%
+    ggplot(., aes(y=library_PCR_cycles_required, x=library_input_dna, color=sample_type, group=sample_type)) +
+        geom_point(alpha=0.5) +
+        stat_smooth(method = "lm", formula = y ~ x, geom = "smooth") +
+        scale_color_manual(values = c("#bdca50", "#AA3377")) +
+        theme_classic() +
+        labs(y="Required number of cycles",x="Amount of inputted DNA (ng)", color="Sample type") +
+        theme_classic()
+```
+
+#### Comparisons
+
+Relationship between the amount of inputted DNA (ng) and the required number of cycles.
+
+```{r inputdna_vs_pcr_sampletype_slope, message=F, warning=F}
+read_csv("data/combined.csv") %>%
+  filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
+  lme(library_PCR_cycles_required ~ library_input_dna, random=~1 | sample_type, data = .) %>%
+  summary()
+```
+
+Comparison between slopes.
+
+```{r inputdna_vs_pcr_sampletype_slope_comparison, message=F, warning=F}
+read_csv("data/combined.csv") %>%
+  filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
+  lm(library_PCR_cycles_required ~ library_input_dna * sample_type, data = .)  %>%
+  summary()
+```
+
+### Taxonomy
+
+```{r inputdna_vs_pcr_taxonomy, message=F, warning=F, fig.height=6, fig.width=10, fig.fullwidth=TRUE}
+read_csv("data/combined.csv") %>%
+  filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
+  filter(library_input_dna <= 200) %>%
+    ggplot(., aes(y=library_PCR_cycles_required, x=library_input_dna, color=tax_group, group=tax_group)) +
+        geom_point(alpha=0.5) +
+        stat_smooth(aes(fill = tax_group), method = "lm", formula = y ~ x, geom = "smooth") +
+        scale_color_manual(values = c("#22883380","#66CCEE80","#CCBB4480","#EE667780","#4477AA80")) +
+        scale_fill_manual(values = c("#22883350","#66CCEE50","#CCBB4450","#EE667750","#4477AA50")) +
+        theme_classic() +
+        labs(y="Required number of cycles",x="Amount of inputted DNA (ng)", color="Sample type", fill="Sample type") +
+        theme_classic()
+```
