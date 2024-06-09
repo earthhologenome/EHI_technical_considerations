@@ -1,31 +1,18 @@
 # EHI technical considerations
 Repository of the manuscript on the practical considerations for hologenomic data generation and analysis in wild vertebrates
 
-## Repository structure
-- **Code:** code employed for the analyses
-  - **data_preparation.Rmd:** cleanup of raw tables for analyses
-  - **antton.Rmd:** analyses by Antton
-  - **aoife.Rmd:** analyses by Aoife
-  - **carlotta.Rmd:** analyses by Carlotta
-  - **raphael.Rmd:** analyses by Raphael
-- **Data:** data employed for the analyses
-  - **Original:** original CSV files downloaded from EHI database
-- **Figures:** figures generated in the analyses
-- **Results:** results generated in the analyses
+#The raw code used for data analysis is in the **Rmd** files stored in the root directory of this repository, while the bookdown-rendered webbook is available at:
 
-## Overview of analyses
-Analyses are organised and distributed in the Projects section:
-https://github.com/orgs/earthhologenome/projects/1/views/1
+[earthhologenome.github.io/EHI_technical_considerations](https://earthhologenome.github.io/EHI_technical_considerations)
 
-### Antton
-- Sample overview map.
-- Sample types overview barplot.
+While the webbook provides a user-friendly overview of the procedures, analyses can be directly reproduced using the Rmd documents. Note that the code chunks that require heavy computation have been tuned off using 'eval=FALSE'. To re-render the webbook, you can use the following code:
 
-### Aoife
-Details here.
 
-### Carlotta
-Details here.
+```r
+library(bookdown)
+library(htmlwidgets)
+library(webshot)
 
-### Raphael
-Details here.
+render_book(input = ".", output_format = "bookdown::gitbook", output_dir = "docs")
+```
+

@@ -1,0 +1,310 @@
+# Metadata access
+
+Earth Hologenome Initiative metadata are stored in Airtable databases. Contents of those databases can be fetched using the R package raritable. However, data can be directly fetched only with personal access tokens. The relevant fraction of the EHI metadata is published on the EHI website www.earthhologenome.org/database.
+
+## Laboratory
+
+### Samples
+
+```{r samples_prep, warning=FALSE, comments="", message=FALSE, eval=FALSE}
+airtable("tblW03Z3DcjRdEkoS", "appQpr6MxnaiVHsHy") %>%
+  read_airtable(., fields = c( #Sample columns
+                              "Code","Type","Origin","Freshness","Freezing",
+                              #Host specimen columns
+                              "specimen_id","Species","Family","Order","Class","Development","Sex","Length (mm)","Weight (g)",
+                              #Capture columns
+                              "captures_flat","Place","Country","Biome","Environment","Latitude reduced","Longitude reduced"), 
+                              id_to_col = TRUE) %>% 
+  as_tibble() %>% 
+  unnest() %>% 
+  select(-airtable_record_id) %>%
+  #rename columns
+  rename(
+    #Sample columns
+    sample_id=Code,
+    sample_type=Type,
+    sample_origin=Origin,
+    sample_freshness=Freshness,
+    sample_freezing=Freezing,
+    #Host specimen columns
+    specimen_id=specimen_id,
+    specimen_species=Species,
+    specimen_order=Order,
+    specimen_family=Family,
+    specimen_class=Class,
+    specimen_development=Development,
+    specimen_sex=Sex,
+    specimen_length=`Length (mm)`,
+    specimen_weight=`Weight (g)`,
+    #Capture columns
+    capture_id=captures_flat,
+    capture_place=Place,
+    capture_country=Country,
+    capture_biome=Biome,
+    capture_environment=Environment,
+    capture_latitude=`Latitude reduced`,
+    capture_longitude=`Longitude reduced`,
+  ) %>%
+  #remove negative controls
+  filter(specimen_id != "") %>%
+  #add taxonomy group for analysis
+   mutate(tax_group = case_when(
+    !str_detect(specimen_order, "Chiroptera") & str_detect(specimen_class, "Mammalia") ~ "Mammals",
+    str_detect(specimen_order, "Chiroptera") ~ "Bats",
+    str_detect(specimen_order, "Squamata") ~ "Reptiles",
+    str_detect(specimen_class, "Aves") ~ "Birds",
+    str_detect(specimen_class, "Amphibia") ~ "Amphibians"
+  )) %>%
+  #save clean table
+  write_tsv("data/sample.tsv")
+```
+
+### Extraction
+
+```{r extraction_prep, warning=FALSE, comments="", message=FALSE, eval=FALSE}
+airtable("tblBcTZcRG1E9wsGO", "appQpr6MxnaiVHsHy") %>%
+  read_airtable(., fields = c( #Sample columns
+                              "Ex code","EX ng/ul","EX ul","EX DNA ng","bb_flat"), 
+                              id_to_col = TRUE) %>% 
+  as_tibble() %>% 
+  unnest() %>% 
+  select(-airtable_record_id) %>%
+  #rename columns
+  rename(
+    extraction_id=`Ex code`,
+    extraction_concentration=`EX ng/ul`,
+    extraction_volume=`EX ul`,
+    extraction_total=`EX DNA ng`,
+    sample_id=`bb_flat`,
+  ) %>%
+  #save clean table
+  write_tsv("data/extraction.tsv")
+```
+
+### Library
+
+```{r library_prep, warning=FALSE, comments="", message=FALSE, eval=FALSE}
+airtable("tblo6AuYpxbbGw9gh", "appQpr6MxnaiVHsHy") %>%
+  read_airtable(., fields = c( #Sample columns
+                              "LI Code","ex_sample_flat","Datasets_flat","sample_flat",
+                              #library stats
+                              "Input volume","Input DNA (ng)","Adaptor nM","Required PCR cycles"), 
+                              id_to_col = TRUE) %>% 
+  as_tibble() %>% 
+  unnest() %>% 
+  select(-airtable_record_id) %>%
+  #rename columns
+  rename(
+    #sample identifiers
+    library_id=`LI Code`,
+    sample_id=sample_flat,
+    extraction_id=ex_sample_flat,
+    sequencing_datasets=Datasets_flat,
+    #library stats
+    library_input_volume=`Input volume`,
+    library_input_dna=`Input DNA (ng)`,
+    library_adaptor_molarity=`Adaptor nM`,
+    library_PCR_cycles_required=`Required PCR cycles`
+  ) %>%
+  #save clean table
+  write_tsv("data/library.tsv")
+```
+
+### Index
+
+```{r index_prep, warning=FALSE, comments="", message=FALSE, eval=FALSE}
+airtable("tblhfsiR4NI9XJQG0", "appQpr6MxnaiVHsHy") %>%
+  read_airtable(., fields = c( #Sample columns
+                              "IN Code","li_sample_flat","Datasets_flat",
+                              #indexing stats
+                              "Adaptors (nM)","Library (nM)","Number of PCR cycles"), 
+                              id_to_col = TRUE) %>% 
+  as_tibble() %>% 
+  unnest() %>% 
+  select(-airtable_record_id) %>%
+  #rename columns
+  rename(
+    #sample identifiers
+    index_id=`IN Code`,
+    library_id=li_sample_flat,
+    #indexing stats
+    index_adaptors_molarity=`Adaptors (nM)`,
+    index_library_molarity=`Library (nM)`,
+    index_PCR_cycles_given=`Number of PCR cycles`) %>%
+  #save clean table
+  write_tsv("data/index.tsv")
+```
+
+### Sequence
+
+```{r sequence_prep, warning=FALSE, comments="", message=FALSE, eval=FALSE}
+airtable("tblaMWLkBUn2g5gRR", "appQpr6MxnaiVHsHy") %>%
+  read_airtable(., fields = c(#Sample columns
+                              "EHI_number","in_code_flat",
+                              #Sequencing information
+                              "Raw data size (GB)","Q20%","Q30%","GC%"), 
+                              id_to_col = TRUE) %>% 
+  as_tibble() %>% 
+  unnest() %>% 
+  select(-airtable_record_id) %>% 
+  #rename columns
+  rename(
+    #sample identifiers
+    sequence_id=EHI_number,
+    index_id=in_code_flat,
+    #sequencing information
+    sequence_data=`Raw data size (GB)`,
+    sequence_q20=`Q20%`,
+    sequence_q30=`Q30%`,
+    sequence_gc=`GC%`
+  ) %>%
+  #save clean table
+  write_tsv("data/sequence.tsv")
+```
+
+## Bioinformatics
+
+### Preprocessing
+
+```{r preprocessing_prep, warning=FALSE, comments="", message=FALSE, eval=FALSE}
+airtable("tblJfLRU2FIVz37Y1", "appQpr6MxnaiVHsHy") %>%
+  read_airtable(., fields = c(#Sample columns
+                              "Code","EHI_plaintext",
+                              #Host genome info
+                              "reference_genome_flat","Reference genome closeness",
+                              #Quality-filtering statistics
+                              "reads_pre_fastp","reads_post_fastp","bases_pre_fastp","bases_post_fastp","adapter_trimmed_reads","adapter_trimmed_bases","host_reads","metagenomic_bases","host_bases",
+                              #Metagenome properties
+                              "singlem_fraction","C"), 
+                              id_to_col = TRUE) %>% 
+  as_tibble() %>% 
+  unnest() %>% 
+  select(-airtable_record_id) %>% 
+  #rename columns
+  rename(
+    #data identifiers
+    preprocessing_id=Code,
+    sequence_id=EHI_plaintext,
+    #host genome info
+    reference_id=reference_genome_flat,
+    reference_closenees=`Reference genome closeness`,
+    #metagenomic complexity estimation
+    nonpareil_coverage=C
+  ) %>%
+  #save clean table
+  write_tsv("data/preprocessing.tsv")
+```
+
+### Assembly
+
+```{r assembly_prep, warning=FALSE, comments="", message=FALSE, eval=FALSE}
+airtable("tblG6ZIvkYN844I97", "appQpr6MxnaiVHsHy") %>%
+  read_airtable(., fields = c("ID","Assembly_code","EHI_number_api","preprocessed_flat",
+                              "Type (from AB Batch)","metagenomic_bases","N50","L50","num_contigs","largest_contig","num_bins"),
+                              id_to_col = TRUE) %>% 
+  as_tibble() %>% 
+  unnest() %>% 
+  select(-airtable_record_id) %>% 
+  #rename columns
+  rename(
+    #data identifiers
+    assembly_input_id=ID, #in coassemblies multiple assembly_input_id's link to a single assembly_id
+    assembly_id=Assembly_code,
+    preprocessing_id=preprocessed_flat,
+    sequence_id=EHI_number_api,
+    #assembly information
+    assembly_type=`Type (from AB Batch)`,
+    assembly_input_bases=metagenomic_bases,
+    #stats
+    assembly_n50=N50,
+    assembly_l50=L50,
+    assembly_num_contigs=num_contigs,
+    assembly_largest_contig=largest_contig,
+    assembly_num_bins=num_bins
+  ) %>%
+  #save clean table
+  write_tsv("data/assembly.tsv")
+```
+
+### Genomes
+
+```{r mags_prep, warning=FALSE, comments="", message=FALSE, eval=FALSE}
+
+airtable("tblMzd3oyaJhdeQcs", "appWbHBNLE6iAsMRV") %>%
+  read_airtable(., fields = c("ID","eha_number",
+                              #Taxonomy
+                              "domain","phylum","class","order","family","genus","species","taxonomy_level",
+                              #Quality
+                              "completeness","contamination","size","GC","N50","coding_density","contigs",
+                              #Host
+                              "host_species"), id_to_col = TRUE) %>% 
+  as_tibble() %>% 
+  unnest() %>% 
+  select(-airtable_record_id) %>% 
+  #rename columns
+  rename(
+    #data identifiers
+    mag_id=ID,
+    assembly_id=eha_number,
+    #taxonomy
+    mag_domain=domain,
+    mag_phylum=phylum,
+    mag_class=class,
+    mag_order=order,
+    mag_family=family,
+    mag_genus=genus,
+    mag_species=species,
+    mag_taxonomy_level=taxonomy_level,
+    #mag stats
+    mag_completeness=completeness,
+    mag_contamination=contamination,
+    mag_size=size,
+    mag_gc=GC,
+    mag_n50=N50,
+    mag_contigs=contigs
+  ) %>%
+  #save clean table
+  write_tsv("data/mag.tsv")
+```
+
+### Reference genomes
+
+```{r reference_prep, warning=FALSE, comments="", message=FALSE, eval=FALSE}
+airtable("tbl1t5vnst50DjT9A", "app6ADWyLxBkDcqYX") %>%
+  read_airtable(., fields = c("Code","Accession","species_flat","Quality","Size (MB)"),
+                              id_to_col = TRUE) %>% 
+  as_tibble() %>% 
+  unnest() %>% 
+  select(-airtable_record_id) %>% 
+  #rename columns
+  rename(
+    #data identifiers
+    reference_id=Code,
+    reference_accession=Accession,
+    reference_species=species_flat,
+    #genome stats
+    reference_quality=Quality,
+    reference_size=`Size (MB)`
+  ) %>%
+  #save clean table
+  write_tsv("data/reference.tsv")
+```
+
+## Host species
+
+```{r host_metadata, warning=FALSE, comments="", message=FALSE, eval=FALSE}
+host_metadata <- airtable("tblaRHhZHRPMUjcKJ", "app6ADWyLxBkDcqYX") %>%
+  read_airtable(., fields = c("Name","taxid","genus_flat","family_flat","order_flat","class_flat"), 
+                id_to_col = TRUE) %>% 
+  as_tibble() %>% 
+  unnest() %>% 
+  select(-airtable_record_id) %>% 
+  #only retain samples associated with samples
+  rename(host_species=Name,
+         host_genus=genus_flat,
+         host_family=family_flat,
+         host_order=order_flat,
+         host_class=class_flat) %>% 
+# Write to table
+  write_tsv("data/host.tsv")
+```

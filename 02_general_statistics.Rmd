@@ -1,0 +1,124 @@
+# General statistics
+
+## Sample statistics
+
+```{r samples_stats, warning=FALSE, comments="", message=FALSE}
+read_tsv("data/sample.tsv") %>%
+  summarise(specimens=n_distinct(specimen_id),
+            species=n_distinct(specimen_species),
+            orders=n_distinct(specimen_order),
+            families=n_distinct(specimen_family)) %>% 
+  tt()
+```
+
+### Origin of samples (Figure S1)
+
+```{r sample_map, message=F, warning=F, fig.height=8, fig.width=10, fig.fullwidth=TRUE}
+read_tsv("data/sample.tsv") %>%
+  #subset columns
+  select(
+    sample_id,
+    specimen_species,
+    specimen_order,
+    specimen_class,
+    capture_latitude,
+    capture_longitude
+  ) %>%
+  #Add jitter to points
+  mutate(
+    capture_latitude_jitter=capture_latitude+rnorm(length(capture_latitude), mean=0, sd=0.5),
+    capture_longitude_jitter=capture_longitude+rnorm(length(capture_longitude), mean=0, sd=0.5),
+  ) %>%
+  #Plot map  
+  ggplot(.) +
+    geom_map(
+      data=map_data("world"),
+      map = map_data("world"),
+      aes(long, lat, map_id=region),
+      color = "white", fill = "#cccccc", size = 0.2
+    ) +
+    geom_point(
+      aes(x=capture_longitude_jitter,y=capture_latitude_jitter, color=specimen_order),
+      alpha=0.5, size=0.5, shape=16) +
+    labs(color="Taxonomic order") +
+    theme_minimal() +
+    theme(
+      axis.title.x=element_blank(),
+      axis.title.y=element_blank(),
+      legend.position = "bottom")
+```
+
+## Data statistics
+
+### Total data
+
+```{r total_data, warning=FALSE, comments="", message=FALSE}
+read_tsv("data/preprocessing.tsv") %>%
+  mutate(bases_pre_fastp = bases_pre_fastp / 1000000000)  %>% #convert bases to gigabases (GB)
+  summarise(
+    total= sum(bases_pre_fastp, na.rm = TRUE),
+    mean= mean(bases_pre_fastp, na.rm = TRUE),
+    sd = sd(bases_pre_fastp, na.rm = TRUE)
+  ) %>%
+  tt()
+```
+
+### Quality-filtered data
+
+```{r quality_filtered_data, warning=FALSE, comments="", message=FALSE}
+read_tsv("data/preprocessing.tsv") %>%
+  mutate(bases_post_fastp = bases_post_fastp / 1000000000)  %>% #convert bases to gigabases (GB)
+  summarise(
+    total= sum(bases_post_fastp, na.rm = TRUE),
+    mean= mean(bases_post_fastp, na.rm = TRUE),
+    sd = sd(bases_post_fastp, na.rm = TRUE)
+  ) %>%
+  tt()
+```
+
+### Host genomic data
+
+```{r host_data, warning=FALSE, comments="", message=FALSE}
+read_tsv("data/preprocessing.tsv") %>%
+  mutate(host_bases = host_bases / 1000000000)  %>% #convert bases to gigabases (GB)
+  summarise(
+    total= sum(host_bases, na.rm = TRUE),
+    mean= mean(host_bases, na.rm = TRUE),
+    sd = sd(host_bases, na.rm = TRUE)
+  ) %>%
+  tt()
+```
+
+### Metagenomic data
+
+```{r metagenomic_data, warning=FALSE, comments="", message=FALSE}
+read_tsv("data/preprocessing.tsv") %>%
+  mutate(metagenomic_bases = metagenomic_bases / 1000000000)  %>% #convert bases to gigabases (GB)
+  summarise(
+    total= sum(metagenomic_bases, na.rm = TRUE),
+    mean= mean(metagenomic_bases, na.rm = TRUE),
+    sd = sd(metagenomic_bases, na.rm = TRUE)
+  ) %>%
+  tt()
+```
+
+### Assemblies 
+
+```{r number_of_assemblies, warning=FALSE, comments="", message=FALSE}
+read_tsv("data/assembly.tsv") %>%
+  group_by(assembly_type) %>% 
+  summarise(assembly_n=n_distinct(assembly_id)) %>%
+  tt()
+```
+
+### MAGs
+
+```{r number_of_mags, warning=FALSE, comments="", message=FALSE}
+read_tsv("data/mag.tsv") %>%
+  summarise(number=n(),
+            phylums=n_distinct(mag_phylum),
+            completeness=mean(mag_completeness),
+            contamination=mean(mag_contamination)) %>% 
+  tt()
+```
+
