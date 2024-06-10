@@ -1,0 +1,142 @@
+# Host genomics
+
+## Host DNA fraction
+
+### Data overview
+
+```{r hostdata_type_summary, message=F, warning=F}
+left_join(read_tsv("data/preprocessing.tsv"),
+          read_tsv("data/sample.tsv"),
+          by="sample_id") %>%
+    mutate(host_percentage= host_bases/bases_post_fastp*100)  %>% 
+    filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
+    group_by(sample_type) %>%
+    summarise(mean=mean(host_percentage, na.rm=T),sd=sd(host_percentage, na.rm=T)) %>% 
+    tt()
+```
+
+```{r hostdata_taxa_summary, message=F, warning=F}
+left_join(read_tsv("data/preprocessing.tsv"),
+          read_tsv("data/sample.tsv"),
+          by="sample_id") %>%
+    mutate(host_percentage= host_bases/bases_post_fastp*100)  %>% 
+    filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
+    group_by(tax_group) %>%
+    summarise(mean=mean(host_percentage, na.rm=T),sd=sd(host_percentage, na.rm=T)) %>% 
+    tt()
+```
+
+### Statistical test
+
+```{r hostdata_test, message=F, warning=F}
+left_join(read_tsv("data/preprocessing.tsv"),
+          read_tsv("data/sample.tsv"),
+          by="sample_id") %>%
+    mutate(host_percentage= host_bases/bases_post_fastp*100)  %>% 
+    filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
+    lm(host_percentage ~ sample_type + tax_group, data = .)  %>%
+    anova() %>%
+    tidy()
+```
+
+### Plot
+
+```{r hostdata_taxa_plot, message=F, warning=F, fig.height=6, fig.width=10, fig.fullwidth=TRUE}
+left_join(read_tsv("data/preprocessing.tsv"),
+          read_tsv("data/sample.tsv"),
+          by="sample_id") %>%
+    mutate(host_percentage= host_bases/bases_post_fastp*100)  %>% #convert bases to gigabases (GB)
+    filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
+    mutate(tax_group=factor(tax_group,levels=c("Amphibians","Reptiles","Birds","Bats","Mammals"))) %>% 
+    ggplot(., aes(y=host_percentage, x=tax_group, color=tax_group, fill=tax_group, group=tax_group)) +
+        geom_jitter(alpha = 0.2, width=0.3) +
+        geom_boxplot(outlier.shape = NA) + 
+        scale_color_manual(values = c("#228833","#EE6677","#CCBB44","#66CCEE","#4477AA")) +
+        scale_fill_manual(values = c("#22883380","#EE667780","#CCBB4480","#66CCEE80","#4477AA80")) +
+        theme_classic() +
+        facet_grid(~sample_type) +
+        labs(y="Host percentage", color="Taxa", fill="Taxa") +
+        theme_classic()
+
+ggsave("figures/hostdata_taxa.pdf",width=9, height=4, units="in")
+```
+
+```{r hostdata_all_plot, message=F, warning=F, eval=FALSE}
+left_join(read_tsv("data/preprocessing.tsv"),
+          read_tsv("data/sample.tsv"),
+          by="sample_id") %>%
+    mutate(host_percentage= host_bases/bases_post_fastp*100)  %>% #convert bases to gigabases (GB)
+    filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
+    mutate(tax_group=factor(tax_group,levels=c("Amphibians","Reptiles","Birds","Bats","Mammals"))) %>% 
+    ggplot(., aes(y=host_percentage, x=sample_type, group=sample_type)) +
+        stat_halfeye(adjust = 1, width = 0.5, .width = 0, justification = 0,normalize = "groups") +
+        theme_classic() +
+        labs(y="Host percentage", color="Taxa", fill="Taxa") +
+        theme_classic()
+
+ggsave("figures/hostdata_taxa_all.pdf",width=9, height=4, units="in")
+```
+
+## Genome depth
+
+### Data overview
+
+```{r host_depth_type_summary, message=F, warning=F}
+left_join(read_tsv("data/preprocessing.tsv"),
+          read_tsv("data/sample.tsv"),
+          by="sample_id") %>%
+    left_join(read_tsv("data/reference.tsv"),by="reference_id") %>% 
+    mutate(depth=host_bases/(reference_size*1000000))  %>% #convert bases to gigabases (GB)
+    filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
+    group_by(sample_type) %>%
+    summarise(mean=mean(depth, na.rm=T),sd=sd(depth, na.rm=T)) %>% 
+    tt()
+```
+
+```{r host_depth_taxa_summary, message=F, warning=F}
+left_join(read_tsv("data/preprocessing.tsv"),
+          read_tsv("data/sample.tsv"),
+          by="sample_id") %>%
+    left_join(read_tsv("data/reference.tsv"),by="reference_id") %>% 
+    mutate(depth=host_bases/(reference_size*1000000))  %>% #convert bases to gigabases (GB)
+    filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
+    group_by(tax_group) %>%
+    summarise(mean=mean(depth, na.rm=T),sd=sd(depth, na.rm=T)) %>% 
+    tt()
+```
+
+### Statistical test
+
+```{r host_genomics, message=F, warning=F}
+left_join(read_tsv("data/preprocessing.tsv"),
+          read_tsv("data/sample.tsv"),
+          by="sample_id") %>%
+    left_join(read_tsv("data/reference.tsv"),by="reference_id") %>% 
+    mutate(depth=host_bases/(reference_size*1000000))  %>% #convert bases to gigabases (GB)
+    filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
+    lm(depth ~ sample_type + tax_group, data = .)  %>%
+    anova() %>%
+    tidy()
+```
+
+### Plot
+
+```{r host_depth, message=F, warning=F, fig.height=6, fig.width=10, message=FALSE, warning=FALSE}
+left_join(read_tsv("data/preprocessing.tsv"),
+          read_tsv("data/sample.tsv"),
+          by="sample_id") %>%
+    left_join(read_tsv("data/reference.tsv"),by="reference_id") %>% 
+    mutate(depth=host_bases/(reference_size*1000000))  %>% #convert bases to gigabases (GB)
+    filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
+    mutate(tax_group=factor(tax_group,levels=c("Amphibians","Reptiles","Birds","Bats","Mammals"))) %>% 
+    ggplot(., aes(y=depth, x=sample_type, color=sample_type, fill=sample_type, group=sample_type)) +
+        ylim(0,10)+
+        geom_boxplot(outlier.shape = NA) + 
+        scale_color_manual(values = c("#bdca50", "#AA3377")) +   
+        scale_fill_manual(values = c("#bdca5080", "#AA337780")) +
+        theme_classic() +
+        labs(y="Host depth of coverage", color="Taxa", fill="Taxa") +
+        theme_classic()
+
+ggsave("figures/hostdepth_taxa.pdf",width=5, height=4, units="in")
+```

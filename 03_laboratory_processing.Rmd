@@ -3,6 +3,7 @@
 ## DNA extraction
 
 ### General statistics
+
 ```{r dna_extraction, message=F, warning=F}
 read_tsv("data/extraction.tsv") %>%
    summarise(
@@ -23,12 +24,16 @@ left_join(read_tsv("data/extraction.tsv"),
           read_tsv("data/sample.tsv"),
           by="sample_id") %>% 
   filter(sample_type %in% c("Faecal", "Anal/cloacal swab"))  %>%
-  ggplot(., aes(x=extraction_total, fill=sample_type, color=sample_type)) + 
-    geom_density() + 
+  ggplot(aes(x=sample_type, y= extraction_total, fill=sample_type, color=sample_type)) + 
+    ylim(0, 2000) +
+    geom_jitter(position = position_jitter(width = 0.2), alpha = 0.5, size=0.5) +
+    stat_halfeye(adjust = 0.5,width = 0.5, .width = 0, justification = -.55,normalize = "groups") +
     scale_color_manual(values = c("#bdca50", "#AA3377")) +   
     scale_fill_manual(values = c("#bdca5050", "#AA337750")) +
     labs(y="Density",x="DNA yield", fill="Sample type", color="Sample type") +
     theme_classic()
+
+ggsave("figures/extraction_type.pdf",width=6, height=4, units="in")
 ```
 
 #### Comparison
@@ -42,7 +47,8 @@ left_join(read_tsv("data/extraction.tsv"),
   mutate(extraction_total = log(extraction_total)) %>% 
   select(extraction_total,sample_type) %>%
   mutate(sample_type = factor(sample_type)) %>%
-  wilcox.test(extraction_total ~ sample_type,data=.)
+  wilcox.test(extraction_total ~ sample_type,data=.) %>%
+  tidy()
 
 left_join(read_tsv("data/extraction.tsv"),
           read_tsv("data/sample.tsv"),
@@ -54,36 +60,31 @@ left_join(read_tsv("data/extraction.tsv"),
     sd = sd(extraction_total, na.rm = TRUE)) %>%
   tt()
 ```
+
 ### Taxonomy
 
 #### Data distribution
-```{r dna_extraction_taxonomy_hist, message=F, warning=F, fig.height=6, fig.width=10, fig.fullwidth=TRUE}
-left_join(read_tsv("data/extraction.tsv"),
-          read_tsv("data/sample.tsv"),
-          by="sample_id") %>% 
-  filter(sample_type %in% c("Faecal", "Anal/cloacal swab"))  %>%
-  filter(!is.na(tax_group))  %>%
-  ggplot(., aes(x=extraction_total, fill=tax_group, color=tax_group)) + 
-    geom_density() +
-    scale_color_manual(values = c("#228833","#66CCEE","#CCBB44","#4477AA","#EE6677")) +
-    scale_fill_manual(values = c("#22883350","#66CCEE50","#CCBB4450","#4477AA50","#EE667750")) +
-    labs(y="Density",x="DNA yield", fill="Sample type", color="Sample type") +
-    theme_classic()
-```
 
 ```{r dna_extraction_taxonomy_jitter, message=F, warning=F, fig.height=6, fig.width=10, fig.fullwidth=TRUE}
 left_join(read_tsv("data/extraction.tsv"),
           read_tsv("data/sample.tsv"),
           by="sample_id") %>% 
   filter(sample_type %in% c("Faecal", "Anal/cloacal swab"))  %>%
-  ggplot(., aes(y=extraction_total,x=tax_group,color=tax_group)) + 
-    geom_jitter() +
-    scale_color_manual(values = c("#22883380","#66CCEE80","#CCBB4480","#4477AA80","#EE667780")) +
+  mutate(tax_group=factor(tax_group,levels=c("Amphibians","Reptiles","Birds","Bats","Mammals"))) %>% 
+  ggplot(aes(y=extraction_total,x=tax_group,color=tax_group,fill=tax_group)) + 
+    ylim(0, 2000) +
+    geom_jitter(position = position_jitter(width = 0.2), alpha = 0.5, size=0.5) +
+    stat_halfeye(adjust = 0.5,width = 0.5, .width = 0, justification = -.55,normalize = "groups") +
+    scale_color_manual(values = c("#22883380","#EE667780","#CCBB4480","#66CCEE80","#4477AA80")) +
+    scale_fill_manual(values = c("#22883380","#EE667780","#CCBB4480","#66CCEE80","#4477AA80")) +
     labs(y="DNA yield",x="Taxonomic group", color="Sample type") +
     theme_classic()
+
+ggsave("figures/extraction_taxa.pdf",width=9, height=4, units="in")
 ```
 
 #### Comparison
+
 ```{r dna_extraction_taxonomy_comparison, message=F, warning=F}
 left_join(read_tsv("data/extraction.tsv"),
           read_tsv("data/sample.tsv"),
@@ -109,6 +110,7 @@ left_join(read_tsv("data/extraction.tsv"),
 ## Sequencing library preparation
 
 ### Overall
+
 ```{r library_preparation_stats, message=F, warning=F}
 left_join(read_tsv("data/library.tsv"),
           read_tsv("data/sample.tsv"),
@@ -116,6 +118,7 @@ left_join(read_tsv("data/library.tsv"),
   filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
   filter(library_PCR_cycles_required > 0) %>%
    summarise(
+    input=mean(library_input_dna, na.rm = TRUE),
     max= max(library_PCR_cycles_required, na.rm = TRUE),
     min= min(library_PCR_cycles_required, na.rm = TRUE),
     mean= mean(library_PCR_cycles_required, na.rm = TRUE),
@@ -123,37 +126,62 @@ left_join(read_tsv("data/library.tsv"),
   tt()
 ```
 
-```{r inputdna_vs_pcr, message=F, warning=F}
+```{r inputdna_vs_pcr_general, message=F, warning=F}
 left_join(read_tsv("data/library.tsv"),
           read_tsv("data/sample.tsv"),
           by="sample_id") %>% 
   filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
   lm(library_PCR_cycles_required ~ library_input_dna, data = .)  %>%
-  summary()
+  tidy()
+```
+
+```{r inputdna_vs_pcr_interaction_type, message=F, warning=F}
+left_join(read_tsv("data/library.tsv"),
+          read_tsv("data/sample.tsv"),
+          by="sample_id") %>% 
+  filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
+  lm(library_PCR_cycles_required ~ library_input_dna * sample_type, data = .)  %>%
+  anova() %>%
+  tidy()
+```
+
+
+```{r inputdna_vs_pcr_interaction_taxa, message=F, warning=F}
+left_join(read_tsv("data/library.tsv"),
+          read_tsv("data/sample.tsv"),
+          by="sample_id") %>% 
+  filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
+  lm(library_PCR_cycles_required ~ library_input_dna * tax_group, data = .)  %>%
+  anova() %>%
+  tidy()
 ```
 
 ### Sample types
 
-```{r inputdna_vs_pcr_sampletype, message=F, warning=F, fig.height=6, fig.width=10, fig.fullwidth=TRUE}
+```{r inputdna_vs_pcr_type, message=F, warning=F, fig.height=6, fig.width=10, fig.fullwidth=TRUE}
 left_join(read_tsv("data/library.tsv"),
           read_tsv("data/sample.tsv"),
           by="sample_id") %>% 
   filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
   filter(library_input_dna <= 200) %>%
-    ggplot(., aes(y=library_PCR_cycles_required, x=library_input_dna, color=sample_type, group=sample_type)) +
-        geom_point(alpha=0.5) +
+  filter(library_PCR_cycles_required > 0) %>%
+    ggplot(aes(y=library_PCR_cycles_required, x=library_input_dna, color=sample_type, fill=sample_type, group=sample_type)) +
+        geom_point(alpha=0.5, size=0.5) +
         stat_smooth(method = "lm", formula = y ~ x, geom = "smooth") +
         scale_color_manual(values = c("#bdca50", "#AA3377")) +
+        scale_fill_manual(values = c("#bdca5050", "#AA337750")) +
         theme_classic() +
         labs(y="Required number of cycles",x="Amount of inputted DNA (ng)", color="Sample type") +
         theme_classic()
+
+ggsave("figures/cycles_type.pdf",width=6, height=3, units="in")
 ```
 
 #### Comparisons
 
 Relationship between the amount of inputted DNA (ng) and the required number of cycles.
 
-```{r inputdna_vs_pcr_sampletype_slope, message=F, warning=F}
+```{r inputdna_vs_pcr_type_slope, message=F, warning=F}
 left_join(read_tsv("data/library.tsv"),
           read_tsv("data/sample.tsv"),
           by="sample_id") %>% 
@@ -166,7 +194,7 @@ left_join(read_tsv("data/library.tsv"),
 
 Comparison between slopes.
 
-```{r inputdna_vs_pcr_sampletype_slope_comparison, message=F, warning=F}
+```{r inputdna_vs_pcr_type_slope_comparison, message=F, warning=F}
 left_join(read_tsv("data/library.tsv"),
           read_tsv("data/sample.tsv"),
           by="sample_id") %>% 
@@ -178,18 +206,97 @@ left_join(read_tsv("data/library.tsv"),
 
 ### Taxonomy
 
-```{r inputdna_vs_pcr_taxonomy, message=F, warning=F, fig.height=6, fig.width=10, fig.fullwidth=TRUE}
+```{r inputdna_vs_pcr_taxa, message=F, warning=F, fig.height=6, fig.width=10, fig.fullwidth=TRUE}
 left_join(read_tsv("data/library.tsv"),
           read_tsv("data/sample.tsv"),
           by="sample_id") %>% 
   filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
   filter(library_input_dna <= 200) %>%
+  filter(library_PCR_cycles_required > 0) %>%
+  mutate(tax_group=factor(tax_group,levels=c("Amphibians","Reptiles","Birds","Bats","Mammals"))) %>% 
     ggplot(., aes(y=library_PCR_cycles_required, x=library_input_dna, color=tax_group, group=tax_group)) +
-        geom_point(alpha=0.5) +
+        geom_point(alpha=0.5, size=0.5) +
         stat_smooth(aes(fill = tax_group), method = "lm", formula = y ~ x, geom = "smooth") +
-        scale_color_manual(values = c("#22883380","#66CCEE80","#CCBB4480","#4477AA80","#EE667780")) +
-        scale_fill_manual(values = c("#22883350","#66CCEE50","#CCBB4450","#4477AA50","#EE667750")) +
+        scale_color_manual(values = c("#228833","#EE6677","#CCBB44","#66CCEE","#4477AA")) +
+        scale_fill_manual(values = c("#22883380","#EE667780","#CCBB4480","#66CCEE80","#4477AA80")) +
         theme_classic() +
         labs(y="Required number of cycles",x="Amount of inputted DNA (ng)", color="Sample type", fill="Sample type") +
         theme_classic()
+
+ggsave("figures/cycles_taxa.pdf",width=6, height=3, units="in")
 ```
+
+## Data quality
+
+```{r pcr_vs_lowqual_type, message=F, warning=F, fig.height=6, fig.width=10, fig.fullwidth=TRUE}
+left_join(read_tsv("data/preprocessing.tsv"),read_tsv("data/sample.tsv"),by="sample_id") %>%
+  left_join(read_tsv("data/sequence.tsv"),by="sequence_id") %>%
+  left_join(read_tsv("data/index.tsv"),by="index_id") %>%
+  filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
+  mutate(lowqual_perc_reads=(1-reads_post_fastp/reads_pre_fastp)*100) %>%
+  mutate(lowqual_perc_bases=(1-bases_post_fastp/bases_pre_fastp)*100) %>%
+  #Plot map  EE6677 < bats
+  ggplot(aes(y=lowqual_perc_bases, x=index_PCR_cycles_given, colour=sample_type, fill=sample_type, group=sample_type)) +
+    geom_jitter(alpha=0.3) +
+    stat_smooth(method = "lm", formula = y ~ x, geom = "smooth", alpha=0.2) +
+    scale_color_manual(values = c("#bdca50", "#AA3377")) +   
+    scale_fill_manual(values = c("#bdca5080", "#AA337780")) +
+    scale_x_log10() +   
+    theme_classic()
+```
+
+```{r pcr_vs_lowqual_taxa, message=F, warning=F, fig.height=6, fig.width=10, fig.fullwidth=TRUE}
+left_join(read_tsv("data/preprocessing.tsv"),read_tsv("data/sample.tsv"),by="sample_id") %>%
+  left_join(read_tsv("data/sequence.tsv"),by="sequence_id") %>%
+  left_join(read_tsv("data/index.tsv"),by="index_id") %>%
+  filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
+  mutate(lowqual_perc_reads=(1-reads_post_fastp/reads_pre_fastp)*100) %>%
+  mutate(lowqual_perc_bases=(1-bases_post_fastp/bases_pre_fastp)*100) %>%
+  mutate(tax_group=factor(tax_group,levels=c("Amphibians","Reptiles","Birds","Bats","Mammals"))) %>% 
+  ggplot(aes(y=lowqual_perc_bases, x=index_PCR_cycles_given, colour=tax_group, fill=tax_group, group=tax_group)) +
+    geom_point(alpha=0.3) +
+    stat_smooth(method = "lm", formula = y ~ x, geom = "smooth", alpha=0.2) +
+        scale_color_manual(values = c("#228833","#EE6677","#CCBB44","#66CCEE","#4477AA")) +
+        scale_fill_manual(values = c("#22883380","#EE667780","#CCBB4480","#66CCEE80","#4477AA80")) +
+    scale_x_log10() +   
+    theme_classic() +
+    theme(legend.position = "bottom")
+```
+
+## Data duplication
+
+```{r pcr_vs_duplicates_type_plot, message=F, warning=F, fig.height=6, fig.width=10, fig.fullwidth=TRUE}
+left_join(read_tsv("data/preprocessing.tsv"),read_tsv("data/sample.tsv"),by="sample_id") %>%
+  left_join(read_tsv("data/sequence.tsv"),by="sequence_id") %>%
+  left_join(read_tsv("data/index.tsv"),by="index_id") %>%
+  filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
+  mutate(lowqual_perc_reads=(1-reads_post_fastp/reads_pre_fastp)*100) %>%
+  mutate(lowqual_perc_bases=(1-bases_post_fastp/bases_pre_fastp)*100) %>%
+  #Plot map  EE6677 < bats
+  ggplot(aes(y=host_duplicate_fraction, x=index_PCR_cycles_given, colour=sample_type, fill=sample_type, group=sample_type)) +
+    geom_jitter(alpha=0.3) +
+    stat_smooth(method = "lm", formula = y ~ x, geom = "smooth", alpha=0.2) +
+    scale_color_manual(values = c("#bdca50", "#AA3377")) +   
+    scale_fill_manual(values = c("#bdca5080", "#AA337780")) +
+    scale_x_log10() +   
+    theme_classic()
+```
+
+```{r pcr_vs_duplicates_taxa_plot, message=F, warning=F, fig.height=6, fig.width=10, fig.fullwidth=TRUE}
+left_join(read_tsv("data/preprocessing.tsv"),read_tsv("data/sample.tsv"),by="sample_id") %>%
+  left_join(read_tsv("data/sequence.tsv"),by="sequence_id") %>%
+  left_join(read_tsv("data/index.tsv"),by="index_id") %>%
+  filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
+  mutate(lowqual_perc_reads=(1-reads_post_fastp/reads_pre_fastp)*100) %>%
+  mutate(lowqual_perc_bases=(1-bases_post_fastp/bases_pre_fastp)*100) %>%
+  mutate(tax_group=factor(tax_group,levels=c("Amphibians","Reptiles","Birds","Bats","Mammals"))) %>% 
+  ggplot(aes(y=host_duplicate_fraction, x=index_PCR_cycles_given, colour=tax_group, fill=tax_group, group=tax_group)) +
+    geom_point(alpha=0.3) +
+    stat_smooth(method = "lm", formula = y ~ x, geom = "smooth", alpha=0.2) +
+        scale_color_manual(values = c("#228833","#EE6677","#CCBB44","#66CCEE","#4477AA")) +
+        scale_fill_manual(values = c("#22883380","#EE667780","#CCBB4480","#66CCEE80","#4477AA80")) +
+    scale_x_log10() +   
+    theme_classic() +
+    theme(legend.position = "bottom")
+```
+

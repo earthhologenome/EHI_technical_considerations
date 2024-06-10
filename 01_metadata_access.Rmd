@@ -169,11 +169,11 @@ airtable("tblaMWLkBUn2g5gRR", "appQpr6MxnaiVHsHy") %>%
 ```{r preprocessing_prep, warning=FALSE, comments="", message=FALSE, eval=FALSE}
 airtable("tblJfLRU2FIVz37Y1", "appQpr6MxnaiVHsHy") %>%
   read_airtable(., fields = c(#Sample columns
-                              "Code","EHI_plaintext",
+                              "Code","EHI_plaintext","sample_code",
                               #Host genome info
                               "reference_genome_flat","Reference genome closeness",
                               #Quality-filtering statistics
-                              "reads_pre_fastp","reads_post_fastp","bases_pre_fastp","bases_post_fastp","adapter_trimmed_reads","adapter_trimmed_bases","host_reads","metagenomic_bases","host_bases",
+                              "reads_pre_fastp","reads_post_fastp","bases_pre_fastp","bases_post_fastp","adapter_trimmed_reads","adapter_trimmed_bases","host_reads","metagenomic_bases","host_bases","host_duplicate_fraction",
                               #Metagenome properties
                               "singlem_fraction","C"), 
                               id_to_col = TRUE) %>% 
@@ -185,6 +185,7 @@ airtable("tblJfLRU2FIVz37Y1", "appQpr6MxnaiVHsHy") %>%
     #data identifiers
     preprocessing_id=Code,
     sequence_id=EHI_plaintext,
+    sample_id=sample_code,
     #host genome info
     reference_id=reference_genome_flat,
     reference_closenees=`Reference genome closeness`,
@@ -200,7 +201,7 @@ airtable("tblJfLRU2FIVz37Y1", "appQpr6MxnaiVHsHy") %>%
 ```{r assembly_prep, warning=FALSE, comments="", message=FALSE, eval=FALSE}
 airtable("tblG6ZIvkYN844I97", "appQpr6MxnaiVHsHy") %>%
   read_airtable(., fields = c("ID","Assembly_code","EHI_number_api","preprocessed_flat",
-                              "Type (from AB Batch)","metagenomic_bases","N50","L50","num_contigs","largest_contig","num_bins"),
+                              "Type (from AB Batch)","metagenomic_bases","assembly_length","N50","L50","num_contigs","largest_contig","num_bins"),
                               id_to_col = TRUE) %>% 
   as_tibble() %>% 
   unnest() %>% 
@@ -266,6 +267,28 @@ airtable("tblMzd3oyaJhdeQcs", "appWbHBNLE6iAsMRV") %>%
   #save clean table
   write_tsv("data/mag.tsv")
 ```
+
+### MAG mapping
+
+```{r mapping_prep, warning=FALSE, comments="", message=FALSE, eval=FALSE}
+
+airtable("tblWDyQmM9rQ9wq57", "appWbHBNLE6iAsMRV") %>%
+  read_airtable(., fields = c("Code","EHI_sample_static",
+                              #Taxonomy
+                              "MAG_mapping_percentage"), id_to_col = TRUE) %>% 
+  as_tibble() %>% 
+  unnest() %>% 
+  select(-airtable_record_id) %>% 
+  #rename columns
+  rename(
+    mapping_id=Code,
+    sequence_id=EHI_sample_static,
+    mapping_percentage=MAG_mapping_percentage
+  ) %>%
+  #save clean table
+  write_tsv("data/mapping.tsv")
+```
+
 
 ### Reference genomes
 

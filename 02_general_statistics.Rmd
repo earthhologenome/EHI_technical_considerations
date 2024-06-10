@@ -2,12 +2,32 @@
 
 ## Sample statistics
 
+### All
+
 ```{r samples_stats, warning=FALSE, comments="", message=FALSE}
 read_tsv("data/sample.tsv") %>%
   summarise(specimens=n_distinct(specimen_id),
             species=n_distinct(specimen_species),
             orders=n_distinct(specimen_order),
             families=n_distinct(specimen_family)) %>% 
+  tt()
+```
+
+### Subset
+
+Faecal and cloacal swab samples employed in the study.
+
+```{r samples_stats_subset, warning=FALSE, comments="", message=FALSE}
+inner_join(read_tsv("data/sample.tsv"),
+          read_tsv("data/extraction.tsv"),
+          by="sample_id") %>% 
+  filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
+  summarise(specimens=n_distinct(specimen_id),
+            species=n_distinct(specimen_species),
+            orders=n_distinct(specimen_order),
+            families=n_distinct(specimen_family),
+            swabs=n_distinct(sample_id[sample_type == "Anal/cloacal swab"]),
+            faeces=n_distinct(sample_id[sample_type == "Faecal"])) %>% 
   tt()
 ```
 
@@ -53,10 +73,17 @@ read_tsv("data/sample.tsv") %>%
 ### Total data
 
 ```{r total_data, warning=FALSE, comments="", message=FALSE}
-read_tsv("data/preprocessing.tsv") %>%
+left_join(read_tsv("data/preprocessing.tsv"),
+          read_tsv("data/sample.tsv"),
+          by="sample_id") %>%
+  filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
   mutate(bases_pre_fastp = bases_pre_fastp / 1000000000)  %>% #convert bases to gigabases (GB)
   summarise(
     total= sum(bases_pre_fastp, na.rm = TRUE),
+    swabs=sum(bases_pre_fastp[sample_type == "Anal/cloacal swab"], na.rm = TRUE),
+    faeces=sum(bases_pre_fastp[sample_type == "Faecal"], na.rm = TRUE),
+    swabs_n=n_distinct(preprocessing_id[sample_type == "Anal/cloacal swab"], na.rm = TRUE),
+    faeces_n=n_distinct(preprocessing_id[sample_type == "Faecal"], na.rm = TRUE),
     mean= mean(bases_pre_fastp, na.rm = TRUE),
     sd = sd(bases_pre_fastp, na.rm = TRUE)
   ) %>%
@@ -105,17 +132,32 @@ read_tsv("data/preprocessing.tsv") %>%
 ### Assemblies 
 
 ```{r number_of_assemblies, warning=FALSE, comments="", message=FALSE}
-read_tsv("data/assembly.tsv") %>%
+left_join(read_tsv("data/assembly.tsv"),
+          read_tsv("data/preprocessing.tsv"),
+          by="preprocessing_id") %>%
+  left_join(read_tsv("data/sample.tsv"),by="sample_id") %>% 
   group_by(assembly_type) %>% 
-  summarise(assembly_n=n_distinct(assembly_id)) %>%
+  summarise(assembly_n=n_distinct(assembly_id),
+            swabs_n=n_distinct(assembly_id[sample_type == "Anal/cloacal swab"], na.rm = TRUE),
+    faeces_n=n_distinct(assembly_id[sample_type == "Faecal"], na.rm = TRUE),
+    swabs_size=sum(assembly_length[sample_type == "Anal/cloacal swab"], na.rm = TRUE),
+    faeces_size=sum(assembly_length[sample_type == "Faecal"], na.rm = TRUE)) %>%
   tt()
 ```
 
 ### MAGs
 
 ```{r number_of_mags, warning=FALSE, comments="", message=FALSE}
-read_tsv("data/mag.tsv") %>%
-  summarise(number=n(),
+left_join(read_tsv("data/mag.tsv"),
+          read_tsv("data/assembly.tsv"),
+          by="assembly_id") %>%
+    left_join(read_tsv("data/preprocessing.tsv"),by="preprocessing_id") %>% 
+    left_join(read_tsv("data/sample.tsv"),by="sample_id") %>% 
+    select(mag_id,mag_phylum,mag_completeness,mag_contamination,sample_type)%>% 
+    unique() %>% 
+    summarise(number=n(),
+            swabs_n=n_distinct(mag_id[sample_type == "Anal/cloacal swab"], na.rm = TRUE),
+            faeces_n=n_distinct(mag_id[sample_type == "Faecal"], na.rm = TRUE),
             phylums=n_distinct(mag_phylum),
             completeness=mean(mag_completeness),
             contamination=mean(mag_contamination)) %>% 
