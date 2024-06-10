@@ -2,7 +2,7 @@
 title: "Earth Hologenome Initiative | Pietroni et al. in prep"
 subtitle: "Practical considerations for hologenomic data generation and analysis in wild vertebrates"
 author:
-  - Carlotta Pietroni, Nanna Gaun, Jonas Lauritsen, Aoife Leonard, Garazi Martin, Ostaizka Aizpurua,  Antton Alberdi^[University of Copenhagen, antton.alberdi@sund.ku.dk], Carlotta Pietroni
+  - Carlotta Pietroni, Nanna Gaun, Jonas Lauritsen, Aoife Leonard, Garazi Martin, Ostaizka Aizpurua,  Antton Alberdi^[University of Copenhagen, antton.alberdi@sund.ku.dk], Raphael Eisenhofer
 date: "`r Sys.Date()`"
 site: bookdown::bookdown_site
 documentclass: book
