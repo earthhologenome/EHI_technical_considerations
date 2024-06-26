@@ -36,7 +36,7 @@ inner_join(read_tsv("data/sample.tsv"),
 ```{r sample_map, message=F, warning=F, fig.height=8, fig.width=10, fig.fullwidth=TRUE}
 read_tsv("data/sample.tsv") %>%
   #subset columns
-  select(
+  dplyr::select(
     sample_id,
     specimen_species,
     specimen_order,
@@ -85,7 +85,9 @@ left_join(read_tsv("data/preprocessing.tsv"),
     swabs_n=n_distinct(preprocessing_id[sample_type == "Anal/cloacal swab"], na.rm = TRUE),
     faeces_n=n_distinct(preprocessing_id[sample_type == "Faecal"], na.rm = TRUE),
     mean= mean(bases_pre_fastp, na.rm = TRUE),
-    sd = sd(bases_pre_fastp, na.rm = TRUE)
+    sd = sd(bases_pre_fastp, na.rm = TRUE),
+    median=median(bases_pre_fastp, na.rm = TRUE),
+    IQR=IQR(bases_pre_fastp, na.rm = TRUE)
   ) %>%
   tt()
 ```
@@ -98,7 +100,9 @@ read_tsv("data/preprocessing.tsv") %>%
   summarise(
     total= sum(bases_post_fastp, na.rm = TRUE),
     mean= mean(bases_post_fastp, na.rm = TRUE),
-    sd = sd(bases_post_fastp, na.rm = TRUE)
+    sd = sd(bases_post_fastp, na.rm = TRUE),
+    median=median(bases_post_fastp, na.rm = TRUE),
+    IQR=IQR(bases_post_fastp, na.rm = TRUE)
   ) %>%
   tt()
 ```
@@ -111,7 +115,9 @@ read_tsv("data/preprocessing.tsv") %>%
   summarise(
     total= sum(host_bases, na.rm = TRUE),
     mean= mean(host_bases, na.rm = TRUE),
-    sd = sd(host_bases, na.rm = TRUE)
+    sd = sd(host_bases, na.rm = TRUE),
+    median=median(host_bases, na.rm = TRUE),
+    IQR=IQR(host_bases, na.rm = TRUE)
   ) %>%
   tt()
 ```
@@ -124,7 +130,9 @@ read_tsv("data/preprocessing.tsv") %>%
   summarise(
     total= sum(metagenomic_bases, na.rm = TRUE),
     mean= mean(metagenomic_bases, na.rm = TRUE),
-    sd = sd(metagenomic_bases, na.rm = TRUE)
+    sd = sd(metagenomic_bases, na.rm = TRUE),
+    median=median(metagenomic_bases, na.rm = TRUE),
+    IQR=IQR(metagenomic_bases, na.rm = TRUE)
   ) %>%
   tt()
 ```
@@ -153,7 +161,7 @@ left_join(read_tsv("data/mag.tsv"),
           by="assembly_id") %>%
     left_join(read_tsv("data/preprocessing.tsv"),by="preprocessing_id") %>% 
     left_join(read_tsv("data/sample.tsv"),by="sample_id") %>% 
-    select(mag_id,mag_phylum,mag_completeness,mag_contamination,sample_type)%>% 
+    dplyr::select(mag_id,mag_phylum,mag_completeness,mag_contamination,sample_type)%>% 
     unique() %>% 
     summarise(number=n(),
             swabs_n=n_distinct(mag_id[sample_type == "Anal/cloacal swab"], na.rm = TRUE),

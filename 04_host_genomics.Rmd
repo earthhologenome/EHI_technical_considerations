@@ -11,7 +11,10 @@ left_join(read_tsv("data/preprocessing.tsv"),
     mutate(host_percentage= host_bases/bases_post_fastp*100)  %>% 
     filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
     group_by(sample_type) %>%
-    summarise(mean=mean(host_percentage, na.rm=T),sd=sd(host_percentage, na.rm=T)) %>% 
+    summarise(mean=mean(host_percentage, na.rm=T),
+              sd=sd(host_percentage, na.rm=T),
+              median=median(host_percentage, na.rm = TRUE),
+              IQR=IQR(host_percentage, na.rm = TRUE)) %>% 
     tt()
 ```
 
@@ -22,7 +25,10 @@ left_join(read_tsv("data/preprocessing.tsv"),
     mutate(host_percentage= host_bases/bases_post_fastp*100)  %>% 
     filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
     group_by(tax_group) %>%
-    summarise(mean=mean(host_percentage, na.rm=T),sd=sd(host_percentage, na.rm=T)) %>% 
+    summarise(mean=mean(host_percentage, na.rm=T),
+              sd=sd(host_percentage, na.rm=T),
+              median=median(host_percentage, na.rm = TRUE),
+              IQR=IQR(host_percentage, na.rm = TRUE)) %>% 
     tt()
 ```
 
@@ -34,9 +40,21 @@ left_join(read_tsv("data/preprocessing.tsv"),
           by="sample_id") %>%
     mutate(host_percentage= host_bases/bases_post_fastp*100)  %>% 
     filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
-    lm(host_percentage ~ sample_type + tax_group, data = .)  %>%
-    anova() %>%
-    tidy()
+    glm(cbind(host_bases,bases_post_fastp) ~ sample_type + tax_group, data = .,family=quasibinomial)  %>%
+    Anova(.,test="F",type="III") %>%
+    tidy()%>%
+    tt()
+
+left_join(read_tsv("data/preprocessing.tsv"),
+          read_tsv("data/sample.tsv"),
+          by="sample_id") %>%
+    mutate(sample_type = factor(sample_type),tax_group=factor(tax_group)) %>%
+    filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
+    glm(cbind(host_bases,bases_post_fastp) ~ sample_type + tax_group, data = .,family=quasibinomial)  %>%
+  glht(.,linfct = mcp(tax_group = "Tukey"))%>%
+  summary()%>%
+  tidy()%>%
+  tt()
 ```
 
 ### Plot
@@ -89,7 +107,10 @@ left_join(read_tsv("data/preprocessing.tsv"),
     mutate(depth=host_bases/(reference_size*1000000))  %>% #convert bases to gigabases (GB)
     filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
     group_by(sample_type) %>%
-    summarise(mean=mean(depth, na.rm=T),sd=sd(depth, na.rm=T)) %>% 
+    summarise(mean=mean(depth, na.rm=T),
+              sd=sd(depth, na.rm=T),
+              median=median(depth, na.rm = TRUE),
+              IQR=IQR(depth, na.rm = TRUE)) %>% 
     tt()
 ```
 
@@ -101,7 +122,10 @@ left_join(read_tsv("data/preprocessing.tsv"),
     mutate(depth=host_bases/(reference_size*1000000))  %>% #convert bases to gigabases (GB)
     filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
     group_by(tax_group) %>%
-    summarise(mean=mean(depth, na.rm=T),sd=sd(depth, na.rm=T)) %>% 
+    summarise(mean=mean(depth, na.rm=T),
+              sd=sd(depth, na.rm=T),
+              median=median(depth, na.rm = TRUE),
+              IQR=IQR(depth, na.rm = TRUE)) %>% 
     tt()
 ```
 
@@ -114,9 +138,23 @@ left_join(read_tsv("data/preprocessing.tsv"),
     left_join(read_tsv("data/reference.tsv"),by="reference_id") %>% 
     mutate(depth=host_bases/(reference_size*1000000))  %>% #convert bases to gigabases (GB)
     filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
-    lm(depth ~ sample_type + tax_group, data = .)  %>%
-    anova() %>%
-    tidy()
+    lm(rank(depth) ~ sample_type + tax_group, data = .)  %>%
+    Anova(type = "III") %>%
+    tidy()%>%
+    tt()
+
+left_join(read_tsv("data/preprocessing.tsv"),
+          read_tsv("data/sample.tsv"),
+          by="sample_id") %>%
+    left_join(read_tsv("data/reference.tsv"),by="reference_id") %>% 
+    mutate(depth=host_bases/(reference_size*1000000))  %>% #convert bases to gigabases (GB)
+    mutate(sample_type = factor(sample_type),tax_group=factor(tax_group)) %>%
+    filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
+    lm(rank(depth) ~ sample_type + tax_group, data = .)  %>%
+    glht(.,linfct = mcp(tax_group = "Tukey"))%>%
+    summary()%>%
+    tidy()%>%
+    tt()
 ```
 
 ### Plot
@@ -135,8 +173,8 @@ left_join(read_tsv("data/preprocessing.tsv"),
         scale_color_manual(values = c("#bdca50", "#AA3377")) +   
         scale_fill_manual(values = c("#bdca5080", "#AA337780")) +
         theme_classic() +
-        labs(y="Host depth of coverage", color="Taxa", fill="Taxa") +
+        labs(y="Host depth of coverage", color="Sample type", fill="Sample type") +
         theme_classic()
 
-ggsave("figures/hostdepth_taxa.pdf",width=5, height=4, units="in")
+ggsave("figures/hostdepth_type.pdf",width=5, height=4, units="in")
 ```

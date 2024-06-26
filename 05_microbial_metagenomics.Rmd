@@ -10,7 +10,10 @@ left_join(read_tsv("data/preprocessing.tsv"),
           by="sample_id") %>%
     filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
     group_by(sample_type) %>%
-    summarise(mean=mean(singlem_fraction, na.rm=T),sd=sd(singlem_fraction, na.rm=T)) %>% 
+    summarise(mean=mean(singlem_fraction, na.rm=T),
+              sd=sd(singlem_fraction, na.rm=T),
+              median=median(singlem_fraction, na.rm = TRUE),
+              IQR=IQR(singlem_fraction, na.rm = TRUE)) %>% 
     tt()
 ```
 
@@ -20,7 +23,10 @@ left_join(read_tsv("data/preprocessing.tsv"),
           by="sample_id") %>%
     filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
     group_by(tax_group) %>%
-    summarise(mean=mean(singlem_fraction, na.rm=T),sd=sd(singlem_fraction, na.rm=T)) %>% 
+    summarise(mean=mean(singlem_fraction, na.rm=T),
+              sd=sd(singlem_fraction, na.rm=T),
+              median=median(singlem_fraction, na.rm = TRUE),
+              IQR=IQR(singlem_fraction, na.rm = TRUE)) %>% 
     tt()
 ```
 
@@ -31,9 +37,29 @@ left_join(read_tsv("data/preprocessing.tsv"),
           read_tsv("data/sample.tsv"),
           by="sample_id") %>%
     filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
-    lm(singlem_fraction ~ sample_type * tax_group, data = .)  %>%
-    anova() %>%
-    tidy()
+    filter(!is.na(singlem_fraction))%>%
+    mutate(singlem_fraction=case_when(singlem_fraction>1~1,
+                                      singlem_fraction<=1~singlem_fraction))%>%
+    glm(singlem_fraction ~  tax_group + sample_type, data = .,family=quasibinomial)  %>%
+    Anova(.,test.statistic = "F",type = "III") %>%
+    tidy()%>%
+    tt()
+
+left_join(read_tsv("data/preprocessing.tsv"),
+          read_tsv("data/sample.tsv"),
+          by="sample_id") %>%
+    filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
+    filter(!is.na(singlem_fraction))%>%
+    mutate(singlem_fraction=case_when(singlem_fraction>1~1,
+                                      singlem_fraction<=1~singlem_fraction),
+           sample_type=factor(sample_type),
+           tax_group=factor(tax_group))%>%
+    glm(singlem_fraction ~  tax_group + sample_type, data = .,family=quasibinomial)  %>%
+    glht(.,linfct = mcp(tax_group = "Tukey"))%>%
+    summary()%>%
+    tidy()%>%
+    tt()
+
 ```
 
 ### Plot
@@ -89,7 +115,10 @@ left_join(read_tsv("data/mapping.tsv"),
     filter(singlem_fraction>0) %>% 
     filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
     group_by(sample_type) %>%
-    summarise(mean=mean(damr, na.rm=T),sd=sd(damr, na.rm=T)) %>% 
+    summarise(mean=mean(damr, na.rm=T),
+              sd=sd(damr, na.rm=T),
+              median=median(damr, na.rm = TRUE),
+              IQR=IQR(damr, na.rm = TRUE)) %>% 
     tt()
 ```
 
@@ -103,7 +132,10 @@ left_join(read_tsv("data/mapping.tsv"),
     filter(singlem_fraction>0) %>% 
     filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
     group_by(tax_group) %>%
-    summarise(mean=mean(damr, na.rm=T),sd=sd(damr, na.rm=T)) %>% 
+    summarise(mean=mean(damr, na.rm=T),
+              sd=sd(damr, na.rm=T),
+              median=median(damr, na.rm = TRUE),
+              IQR=IQR(damr, na.rm = TRUE)) %>% 
     tt()
 ```
 
@@ -114,13 +146,32 @@ left_join(read_tsv("data/mapping.tsv"),
           read_tsv("data/preprocessing.tsv"),
           by="sequence_id") %>%
     left_join(read_tsv("data/sample.tsv"), by="sample_id") %>% 
-    mutate(singlem_fraction=ifelse(singlem_fraction>1,100,singlem_fraction*100)) %>% 
-    mutate(damr=ifelse(singlem_fraction<mapping_percentage,100,(mapping_percentage/singlem_fraction)*100)) %>%
+    mutate(singlem_fraction=ifelse(singlem_fraction>1,11,singlem_fraction)) %>% 
+    mutate(damr=ifelse(singlem_fraction<mapping_percentage,1,mapping_percentage/singlem_fraction)) %>%
     filter(singlem_fraction>0) %>% 
     filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
-    lm(damr ~ sample_type + tax_group, data = .)  %>%
-    anova() %>%
-    tidy()
+    filter(!is.na(damr)) %>%
+    glm(damr ~ sample_type + tax_group, data = .,family=quasibinomial)  %>%
+    Anova(test.statistic = "F",type="III") %>%
+    tidy()%>%
+    tt()
+
+left_join(read_tsv("data/mapping.tsv"),
+          read_tsv("data/preprocessing.tsv"),
+          by="sequence_id") %>%
+    left_join(read_tsv("data/sample.tsv"), by="sample_id") %>% 
+    mutate(singlem_fraction=ifelse(singlem_fraction>1,11,singlem_fraction)) %>% 
+    mutate(damr=ifelse(singlem_fraction<mapping_percentage,1,mapping_percentage/singlem_fraction)) %>%
+    filter(singlem_fraction>0) %>% 
+    filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
+    filter(!is.na(damr)) %>%
+    mutate(sample_type=factor(sample_type),
+           tax_group=factor(tax_group))%>%
+    glm(damr ~ sample_type + tax_group, data = .,family=quasibinomial) %>%
+    glht(.,linfct = mcp(tax_group = "Tukey"))%>%
+    summary()%>%
+    tidy()%>%
+    tt()
 ```
 
 ### Plot
@@ -171,18 +222,6 @@ ggsave("figures/damr_taxa.pdf",width=9, height=4, units="in")
 
 ### Data summary
 
-```{r assemblysize_taxa_summary, message=F, warning=F}
-left_join(read_tsv("data/preprocessing.tsv"),
-          read_tsv("data/sample.tsv"),
-          by="sample_id") %>%
-    left_join(read_tsv("data/assembly.tsv"), by="preprocessing_id") %>% 
-    filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
-    filter(assembly_type == "Individual") %>% 
-    group_by(tax_group) %>%
-    summarise(mean=mean(assembly_length, na.rm=T),sd=sd(assembly_length, na.rm=T)) %>% 
-    tt()
-```
-
 ```{r assemblysize_type_summary, message=F, warning=F}
 left_join(read_tsv("data/preprocessing.tsv"),
           read_tsv("data/sample.tsv"),
@@ -191,7 +230,25 @@ left_join(read_tsv("data/preprocessing.tsv"),
     filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
     filter(assembly_type == "Individual") %>% 
     group_by(sample_type) %>%
-    summarise(mean=mean(assembly_length, na.rm=T),sd=sd(assembly_length, na.rm=T)) %>% 
+    summarise(mean=mean(assembly_length, na.rm=T),
+              sd=sd(assembly_length, na.rm=T),
+              median=median(assembly_length, na.rm = TRUE),
+              IQR=IQR(assembly_length, na.rm = TRUE)) %>% 
+    tt()
+```
+
+```{r assemblysize_taxa_summary, message=F, warning=F}
+left_join(read_tsv("data/preprocessing.tsv"),
+          read_tsv("data/sample.tsv"),
+          by="sample_id") %>%
+    left_join(read_tsv("data/assembly.tsv"), by="preprocessing_id") %>% 
+    filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
+    filter(assembly_type == "Individual") %>% 
+    group_by(tax_group) %>%
+    summarise(mean=mean(assembly_length, na.rm=T),
+              sd=sd(assembly_length, na.rm=T),
+              median=median(assembly_length, na.rm = TRUE),
+              IQR=IQR(assembly_length, na.rm = TRUE)) %>% 
     tt()
 ```
 
@@ -204,9 +261,10 @@ left_join(read_tsv("data/preprocessing.tsv"),
     left_join(read_tsv("data/assembly.tsv"), by="preprocessing_id") %>% 
     filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
     filter(assembly_type == "Individual") %>% 
-    lm(assembly_length ~ sample_type + tax_group, data = .)  %>%
-    anova() %>%
-    tidy()
+    lm(rank(assembly_length) ~ sample_type + tax_group, data = .)  %>%
+    Anova(type="III") %>%
+    tidy()%>%
+    tt()
 ```
 
 ### Plot
@@ -254,18 +312,6 @@ ggsave("figures/assemblysize_taxa_all.pdf",width=9, height=4, units="in")
 
 ### Summary statistics
 
-```{r numberofmags_taxa_summary, message=F, warning=F}
-left_join(read_tsv("data/preprocessing.tsv"),
-          read_tsv("data/sample.tsv"),
-          by="sample_id") %>%
-    left_join(read_tsv("data/assembly.tsv"), by="preprocessing_id") %>% 
-    filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
-    filter(assembly_type == "Individual") %>% 
-    group_by(tax_group) %>%
-    summarise(mean=mean(assembly_num_bins, na.rm=T),sd=sd(assembly_num_bins, na.rm=T)) %>% 
-    tt()
-```
-
 ```{r numberofmags_type_summary, message=F, warning=F}
 left_join(read_tsv("data/preprocessing.tsv"),
           read_tsv("data/sample.tsv"),
@@ -274,7 +320,25 @@ left_join(read_tsv("data/preprocessing.tsv"),
     filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
     filter(assembly_type == "Individual") %>% 
     group_by(sample_type) %>%
-    summarise(mean=mean(assembly_num_bins, na.rm=T),sd=sd(assembly_num_bins, na.rm=T)) %>% 
+    summarise(mean=mean(assembly_num_bins, na.rm=T),
+              sd=sd(assembly_num_bins, na.rm=T),
+              median=median(assembly_num_bins, na.rm = TRUE),
+              IQR=IQR(assembly_num_bins, na.rm = TRUE)) %>% 
+    tt()
+```
+
+```{r numberofmags_taxa_summary, message=F, warning=F}
+left_join(read_tsv("data/preprocessing.tsv"),
+          read_tsv("data/sample.tsv"),
+          by="sample_id") %>%
+    left_join(read_tsv("data/assembly.tsv"), by="preprocessing_id") %>% 
+    filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
+    filter(assembly_type == "Individual") %>% 
+    group_by(tax_group) %>%
+    summarise(mean=mean(assembly_num_bins, na.rm=T),
+              sd=sd(assembly_num_bins, na.rm=T),
+              median=median(assembly_num_bins, na.rm = TRUE),
+              IQR=IQR(assembly_num_bins, na.rm = TRUE)) %>% 
     tt()
 ```
 
@@ -287,9 +351,24 @@ left_join(read_tsv("data/preprocessing.tsv"),
     left_join(read_tsv("data/assembly.tsv"), by="preprocessing_id") %>% 
     filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
     filter(assembly_type == "Individual") %>% 
-    lm(assembly_num_bins ~ sample_type * tax_group, data = .)  %>%
-    anova() %>%
-    tidy()
+    glm(assembly_num_bins ~ sample_type + tax_group, data = .,family=quasipoisson)  %>%
+    Anova(test.statistic = "F",type = "III") %>%
+    tidy()%>%
+    tt()
+
+left_join(read_tsv("data/preprocessing.tsv"),
+          read_tsv("data/sample.tsv"),
+          by="sample_id") %>%
+    left_join(read_tsv("data/assembly.tsv"), by="preprocessing_id") %>% 
+    filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
+    filter(assembly_type == "Individual") %>% 
+    mutate(sample_type=factor(sample_type),
+           tax_group=factor(tax_group))%>%
+    glm(assembly_num_bins ~ sample_type + tax_group, data = .,family=quasipoisson)  %>%
+    glht(.,linfct = mcp(tax_group = "Tukey"))%>%
+    summary()%>%
+    tidy()%>%
+    tt()
 ```
 
 ### Plot
@@ -386,10 +465,20 @@ left_join(read_tsv("data/preprocessing.tsv"),
     left_join(read_tsv("data/assembly.tsv"), by="preprocessing_id") %>% 
     left_join(read_tsv("data/mag.tsv"), by="assembly_id") %>% 
     filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
+    filter(assembly_type == "Individual")%>%
+    with(cor(assembly_num_bins,assembly_length))
+
+left_join(read_tsv("data/preprocessing.tsv"),
+          read_tsv("data/sample.tsv"),
+          by="sample_id") %>%
+    left_join(read_tsv("data/assembly.tsv"), by="preprocessing_id") %>% 
+    left_join(read_tsv("data/mag.tsv"), by="assembly_id") %>% 
+    filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
     filter(assembly_type == "Individual") %>% 
     ggplot(aes(y=assembly_num_bins, x=assembly_length, color=tax_group)) +
         geom_point(alpha=0.5, size=0.5) +
         scale_color_manual(values = c("#22883380","#EE667780","#CCBB4480","#66CCEE80","#4477AA80")) +
+        geom_smooth(method="lm",se=FALSE)+
         theme_classic() +
         labs(y="Number of bins", x="Assembly length", color="Taxa", fill="Taxa")
 ```

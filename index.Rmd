@@ -1,9 +1,9 @@
 ---
-title: "Earth Hologenome Initiative | Pietroni et al. in prep"
-subtitle: "Practical considerations for hologenomic data generation and analysis in wild vertebrates"
+title: "Earth Hologenome Initiative | Pietroni et al. 2024"
+subtitle: "Hologenomic data generation and analysis in wild vertebrates"
 author:
-  - Carlotta Pietroni, Nanna Gaun, Jonas Lauritsen, Aoife Leonard, Garazi Martin, Ostaizka Aizpurua,  Antton Alberdi^[University of Copenhagen, antton.alberdi@sund.ku.dk], Raphael Eisenhofer
-date: "`r Sys.Date()`"
+  - Carlotta Pietroni, Nanna Gaun, Jonas Lauritsen, Aoife Leonard, Garazi Martin, Iñaki Odriozola, Ostaizka Aizpurua,  Antton Alberdi^[University of Copenhagen, antton.alberdi@sund.ku.dk], Raphael Eisenhofer
+date: "Last update: `r Sys.Date()`"
 site: bookdown::bookdown_site
 documentclass: book
 bibliography: [book.bib, packages.bib]
@@ -62,4 +62,10 @@ library(nlme)
 library(broom)
 library(broom.mixed)
 library(ggdist)
+library(sjPlot)
+library(multcomp)
+library(car)
+library(cluster)
+library(vegan)
+library(ggrepel)
 ```

@@ -31,17 +31,12 @@ mags
 laboratory-sample-processing
 dna-extraction
 general-statistics-1
-sample-types
 data-distribution
-comparison
+sample-types
 taxonomy
-data-distribution-1
-comparison-1
+comparison
 sequencing-library-preparation
 overall
-sample-types-1
-comparisons
-taxonomy-1
 data-quality
 data-duplication
 host-genomics
@@ -72,3 +67,6 @@ statistical-test-5
 plot-5
 mag-quality
 assemblies-vs-mags
+overall-ordination
+sample-types-1
+taxonomic-groups

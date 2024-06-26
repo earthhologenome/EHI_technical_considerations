@@ -2,6 +2,8 @@
 
 Earth Hologenome Initiative metadata are stored in Airtable databases. Contents of those databases can be fetched using the R package raritable. However, data can be directly fetched only with personal access tokens. The relevant fraction of the EHI metadata is published on the EHI website www.earthhologenome.org/database.
 
+The data used for this study were frozen on June 9th 2024.
+
 ## Laboratory
 
 ### Samples
@@ -17,7 +19,7 @@ airtable("tblW03Z3DcjRdEkoS", "appQpr6MxnaiVHsHy") %>%
                               id_to_col = TRUE) %>% 
   as_tibble() %>% 
   unnest() %>% 
-  select(-airtable_record_id) %>%
+  dplyr::select(-airtable_record_id) %>%
   #rename columns
   rename(
     #Sample columns
@@ -68,7 +70,7 @@ airtable("tblBcTZcRG1E9wsGO", "appQpr6MxnaiVHsHy") %>%
                               id_to_col = TRUE) %>% 
   as_tibble() %>% 
   unnest() %>% 
-  select(-airtable_record_id) %>%
+  dplyr::select(-airtable_record_id) %>%
   #rename columns
   rename(
     extraction_id=`Ex code`,
@@ -92,7 +94,7 @@ airtable("tblo6AuYpxbbGw9gh", "appQpr6MxnaiVHsHy") %>%
                               id_to_col = TRUE) %>% 
   as_tibble() %>% 
   unnest() %>% 
-  select(-airtable_record_id) %>%
+  dplyr::select(-airtable_record_id) %>%
   #rename columns
   rename(
     #sample identifiers
@@ -121,7 +123,7 @@ airtable("tblhfsiR4NI9XJQG0", "appQpr6MxnaiVHsHy") %>%
                               id_to_col = TRUE) %>% 
   as_tibble() %>% 
   unnest() %>% 
-  select(-airtable_record_id) %>%
+  dplyr::select(-airtable_record_id) %>%
   #rename columns
   rename(
     #sample identifiers
@@ -146,7 +148,7 @@ airtable("tblaMWLkBUn2g5gRR", "appQpr6MxnaiVHsHy") %>%
                               id_to_col = TRUE) %>% 
   as_tibble() %>% 
   unnest() %>% 
-  select(-airtable_record_id) %>% 
+  dplyr::select(-airtable_record_id) %>% 
   #rename columns
   rename(
     #sample identifiers
@@ -179,7 +181,7 @@ airtable("tblJfLRU2FIVz37Y1", "appQpr6MxnaiVHsHy") %>%
                               id_to_col = TRUE) %>% 
   as_tibble() %>% 
   unnest() %>% 
-  select(-airtable_record_id) %>% 
+  dplyr::select(-airtable_record_id) %>% 
   #rename columns
   rename(
     #data identifiers
@@ -205,7 +207,7 @@ airtable("tblG6ZIvkYN844I97", "appQpr6MxnaiVHsHy") %>%
                               id_to_col = TRUE) %>% 
   as_tibble() %>% 
   unnest() %>% 
-  select(-airtable_record_id) %>% 
+  dplyr::select(-airtable_record_id) %>% 
   #rename columns
   rename(
     #data identifiers
@@ -241,7 +243,7 @@ airtable("tblMzd3oyaJhdeQcs", "appWbHBNLE6iAsMRV") %>%
                               "host_species"), id_to_col = TRUE) %>% 
   as_tibble() %>% 
   unnest() %>% 
-  select(-airtable_record_id) %>% 
+  dplyr::select(-airtable_record_id) %>% 
   #rename columns
   rename(
     #data identifiers
@@ -278,7 +280,7 @@ airtable("tblWDyQmM9rQ9wq57", "appWbHBNLE6iAsMRV") %>%
                               "MAG_mapping_percentage"), id_to_col = TRUE) %>% 
   as_tibble() %>% 
   unnest() %>% 
-  select(-airtable_record_id) %>% 
+  dplyr::select(-airtable_record_id) %>% 
   #rename columns
   rename(
     mapping_id=Code,
@@ -298,7 +300,7 @@ airtable("tbl1t5vnst50DjT9A", "app6ADWyLxBkDcqYX") %>%
                               id_to_col = TRUE) %>% 
   as_tibble() %>% 
   unnest() %>% 
-  select(-airtable_record_id) %>% 
+  dplyr::select(-airtable_record_id) %>% 
   #rename columns
   rename(
     #data identifiers
@@ -321,7 +323,7 @@ host_metadata <- airtable("tblaRHhZHRPMUjcKJ", "app6ADWyLxBkDcqYX") %>%
                 id_to_col = TRUE) %>% 
   as_tibble() %>% 
   unnest() %>% 
-  select(-airtable_record_id) %>% 
+  dplyr::select(-airtable_record_id) %>% 
   #only retain samples associated with samples
   rename(host_species=Name,
          host_genus=genus_flat,
