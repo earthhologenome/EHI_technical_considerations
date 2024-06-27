@@ -206,7 +206,7 @@ left_join(read_tsv("data/mapping.tsv"),
     filter(sample_type %in% c("Faecal", "Anal/cloacal swab")) %>%
     filter(singlem_fraction>0) %>% 
     mutate(tax_group=factor(tax_group,levels=c("Amphibians","Reptiles","Birds","Bats","Mammals"))) %>% 
-    ggplot(aes(y=singlem_fraction, x=tax_group, color=tax_group, fill=tax_group, group=tax_group)) +
+    ggplot(aes(y=damr, x=tax_group, color=tax_group, fill=tax_group, group=tax_group)) +
         geom_jitter(position = position_jitter(width = 0.2), alpha = 0.5, size=0.5) +
         stat_halfeye(adjust = 0.5,width = 0.5, .width = 0, justification = -.55,normalize = "groups") +
         scale_color_manual(values = c("#228833","#EE6677","#CCBB44","#66CCEE","#4477AA")) +

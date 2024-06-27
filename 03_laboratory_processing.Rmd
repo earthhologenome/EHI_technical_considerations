@@ -207,7 +207,8 @@ left_join(read_tsv("data/preprocessing.tsv"),read_tsv("data/sample.tsv"),by="sam
     scale_color_manual(values = c("#bdca50", "#AA3377")) +   
     scale_fill_manual(values = c("#bdca5080", "#AA337780")) +
     scale_x_log10() +   
-    theme_classic()
+    theme_classic() +
+    theme(legend.position = "bottom")
 ```
 
 ```{r pcr_vs_lowqual_taxa, message=F, warning=F, fig.height=6, fig.width=10, fig.fullwidth=TRUE}
@@ -219,7 +220,7 @@ left_join(read_tsv("data/preprocessing.tsv"),read_tsv("data/sample.tsv"),by="sam
   mutate(lowqual_perc_bases=(1-bases_post_fastp/bases_pre_fastp)*100) %>%
   mutate(tax_group=factor(tax_group,levels=c("Amphibians","Reptiles","Birds","Bats","Mammals"))) %>% 
   ggplot(aes(y=lowqual_perc_bases, x=index_PCR_cycles_given, colour=tax_group, fill=tax_group, group=tax_group)) +
-    geom_point(alpha=0.3) +
+    geom_jitter(alpha=0.3) +
     stat_smooth(method = "gam", formula = y ~ s(x, bs = "ps",k=4),se=FALSE, geom = "smooth", alpha=0.2) +
         scale_color_manual(values = c("#228833","#EE6677","#CCBB44","#66CCEE","#4477AA")) +
         scale_fill_manual(values = c("#22883380","#EE667780","#CCBB4480","#66CCEE80","#4477AA80")) +
@@ -244,7 +245,8 @@ left_join(read_tsv("data/preprocessing.tsv"),read_tsv("data/sample.tsv"),by="sam
     scale_color_manual(values = c("#bdca50", "#AA3377")) +   
     scale_fill_manual(values = c("#bdca5080", "#AA337780")) +
     scale_x_log10() +   
-    theme_classic()
+    theme_classic() +
+    theme(legend.position = "bottom")
 ```
 
 ```{r pcr_vs_duplicates_taxa_plot, message=F, warning=F, fig.height=6, fig.width=10, fig.fullwidth=TRUE}
@@ -256,7 +258,7 @@ left_join(read_tsv("data/preprocessing.tsv"),read_tsv("data/sample.tsv"),by="sam
   mutate(lowqual_perc_bases=(1-bases_post_fastp/bases_pre_fastp)*100) %>%
   mutate(tax_group=factor(tax_group,levels=c("Amphibians","Reptiles","Birds","Bats","Mammals"))) %>% 
   ggplot(aes(y=host_duplicate_fraction, x=index_PCR_cycles_given, colour=tax_group, fill=tax_group, group=tax_group)) +
-    geom_point(alpha=0.3) +
+    geom_jitter(alpha=0.3) +
     stat_smooth(method = "gam", formula = y ~ s(x, bs = "ps",k=4),se=FALSE, geom = "smooth", alpha=0.2) +
         scale_color_manual(values = c("#228833","#EE6677","#CCBB44","#66CCEE","#4477AA")) +
         scale_fill_manual(values = c("#22883380","#EE667780","#CCBB4480","#66CCEE80","#4477AA80")) +
