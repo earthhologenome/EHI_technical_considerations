@@ -2,7 +2,7 @@
 title: "Earth Hologenome Initiative | Pietroni et al. 2024"
 subtitle: "Hologenomic data generation and analysis in wild vertebrates"
 author:
-  - Carlotta Pietroni, Nanna Gaun, Jonas Lauritsen, Aoife Leonard, Garazi Martin, Iñaki Odriozola, Ostaizka Aizpurua,  Antton Alberdi^[University of Copenhagen, antton.alberdi@sund.ku.dk], Raphael Eisenhofer
+  - Carlotta Pietroni, Nanna Gaun, Aoife Leonard, Jonas Lauritsen, Garazi Martin, Iñaki Odriozola, Ostaizka Aizpurua,  Antton Alberdi^[University of Copenhagen, antton.alberdi@sund.ku.dk], Raphael Eisenhofer
 date: "Last update: `r Sys.Date()`"
 site: bookdown::bookdown_site
 documentclass: book
@@ -23,7 +23,9 @@ knitr::opts_chunk$set(
 
 # Introduction
 
-This webbook contains all the code used for the comparative study on the generation of metagenomic data from faeces of various species using three extraction methods.
+This webbook contains all the code used for the comparative study on the generation of metagenomic data from faeces of various species using three extraction methods. The raw code used for rendering this webbook is available in the following Github repository:
+
+> https://github.com/earthhologenome/EHI_technical_considerations
 
 ## Prepare the R environment
 
