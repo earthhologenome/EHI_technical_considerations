@@ -483,4 +483,82 @@ left_join(read_tsv("data/preprocessing.tsv"),
         labs(y="Number of bins", x="Assembly length", color="Taxa", fill="Taxa")
 ```
 
+## Microbial fraction vs MAGs
 
+```{r microbial_fraction_mag, message=F, warning=F}
+microbial_fraction_mag <- left_join(read_tsv("data/preprocessing.tsv"),
+          read_tsv("data/sample.tsv"),
+          by="sample_id") %>%
+    left_join(read_tsv("data/assembly.tsv"), by="preprocessing_id") %>% 
+    filter(sample_type %in% c("Faecal")) %>%
+    filter(assembly_type == "Individual") %>% 
+    mutate(tax_group=factor(tax_group,levels=c("Amphibians","Reptiles","Birds","Bats","Mammals"))) %>% 
+    mutate(singlem_fraction=ifelse(singlem_fraction>1,100,singlem_fraction*100)) %>% 
+    dplyr::select(assembly_num_bins,singlem_fraction,tax_group)
+
+lm(assembly_num_bins ~ singlem_fraction * tax_group, data = microbial_fraction_mag) %>% 
+  summary() %>% 
+  tidy() %>% 
+  tt()
+```
+
+```{r microbial_fraction_mag_plot, message=F, warning=F}
+
+left_join(read_tsv("data/preprocessing.tsv"),
+          read_tsv("data/sample.tsv"),
+          by="sample_id") %>%
+    left_join(read_tsv("data/assembly.tsv"), by="preprocessing_id") %>% 
+    filter(sample_type %in% c("Faecal")) %>%
+    filter(assembly_type == "Individual") %>% 
+    mutate(tax_group=factor(tax_group,levels=c("Amphibians","Reptiles","Birds","Bats","Mammals"))) %>% 
+    mutate(singlem_fraction=ifelse(singlem_fraction>1,100,singlem_fraction*100)) %>% 
+    ggplot(aes(y=assembly_num_bins, x=singlem_fraction, color=tax_group, fill=tax_group, group=tax_group)) +
+        ylim(0,100) +
+        geom_jitter(alpha = 0.6, width=0.3, size=0.5) +
+        geom_smooth(method="lm") +
+        scale_color_manual(values = c("#228833","#EE6677","#CCBB44","#66CCEE","#4477AA")) +
+        scale_fill_manual(values = c("#22883380","#EE667780","#CCBB4480","#66CCEE80","#4477AA80")) +
+        theme_classic() +
+        labs(y="Number of MAGs", color="Taxa", fill="Taxa") +
+        theme_classic()
+```
+
+
+## Microbial fraction vs Nonpareil
+
+```{r microbial_fraction_nonpareil, message=F, warning=F}
+microbial_fraction_nonpareil <- left_join(read_tsv("data/preprocessing.tsv"),
+          read_tsv("data/sample.tsv"),
+          by="sample_id") %>%
+    left_join(read_tsv("data/assembly.tsv"), by="preprocessing_id") %>% 
+    filter(sample_type %in% c("Faecal")) %>%
+    filter(assembly_type == "Individual") %>% 
+    mutate(tax_group=factor(tax_group,levels=c("Amphibians","Reptiles","Birds","Bats","Mammals"))) %>% 
+    mutate(singlem_fraction=ifelse(singlem_fraction>1,100,singlem_fraction*100)) %>% 
+    dplyr::select(nonpareil_coverage,singlem_fraction,tax_group)
+
+lm(nonpareil_coverage ~ singlem_fraction * tax_group, data = microbial_fraction_nonpareil) %>% 
+  summary() %>% 
+  tidy() %>% 
+  tt()
+```
+
+```{r microbial_fraction_nonpareil_plot, message=F, warning=F}
+
+left_join(read_tsv("data/preprocessing.tsv"),
+          read_tsv("data/sample.tsv"),
+          by="sample_id") %>%
+    left_join(read_tsv("data/assembly.tsv"), by="preprocessing_id") %>% 
+    filter(sample_type %in% c("Faecal")) %>%
+    filter(assembly_type == "Individual") %>% 
+    mutate(tax_group=factor(tax_group,levels=c("Amphibians","Reptiles","Birds","Bats","Mammals"))) %>% 
+    mutate(singlem_fraction=ifelse(singlem_fraction>1,100,singlem_fraction*100)) %>% 
+    ggplot(aes(y=nonpareil_coverage, x=singlem_fraction, color=tax_group, fill=tax_group, group=tax_group)) +
+        geom_jitter(alpha = 0.6, width=0.3, size=0.5) +
+        geom_smooth(method="lm") +
+        scale_color_manual(values = c("#228833","#EE6677","#CCBB44","#66CCEE","#4477AA")) +
+        scale_fill_manual(values = c("#22883380","#EE667780","#CCBB4480","#66CCEE80","#4477AA80")) +
+        theme_classic() +
+        labs(y="Nonpareil completeness", color="Taxa", fill="Taxa") +
+        theme_classic()
+```

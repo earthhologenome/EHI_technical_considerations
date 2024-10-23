@@ -67,6 +67,8 @@ statistical-test-5
 plot-5
 mag-quality
 assemblies-vs-mags
+microbial-fraction-vs-mags
+microbial-fraction-vs-nonpareil
 overall-ordination
 sample-types-1
 taxonomic-groups
